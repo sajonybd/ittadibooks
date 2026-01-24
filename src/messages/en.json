@@ -1,0 +1,343 @@
+{
+  "Navbar": {
+    "title": "Ittadi Grantho Prokash",
+    "login": "Login",
+    "logout": "Logout",
+    "register": "Register",
+    "searchPlaceholder": "Search by book or author name",
+    "about": "Go to the about page"
+  },
+
+  "NavLinks": {
+    "home": "Home",
+    "newbooks": "New Books",
+    "about": "About Us",
+    "contact": "Contact",
+    "ittadiBooks": "Ittadi Books",
+    "bookFair": "Book Fair 2025",
+    "bhumikabooks": "Bhumika Books",
+    "allbooks": "All Books",
+    "gallery": "Gallery",
+    "blog": "Blog",
+    "author": "Author",
+    "category": "Category",
+    "cart": "Cart",
+    "wishlist": "Wishlist",
+    "profile": "Profile",
+    "settings": "Settings"
+  },
+  "authors": {
+    "title": "Prominent Bangladeshi Authors",
+    "list": [
+      "Humayun Ahmed",
+      "Muhammed Zafar Iqbal",
+      "Taslima Nasrin",
+      "Anisul Hoque",
+      "Begum Rokeya",
+      "Rabindranath Tagore",
+      "Kazi Nazrul Islam",
+      "Syed Mujtaba Ali",
+      "Ahmed Sofa",
+      "Selina Hossain",
+      "Shamsur Rahman",
+      "Jasimuddin",
+      "Abul Mansur Ahmed",
+      "Sufia Kamal",
+      "Shahidullah Kaiser",
+      "Moniruzzaman Islamabadi",
+      "Syed Shamsul Haq",
+      "Nirmalendu Goon",
+      "Hasan Azizul Huq",
+      "Rashid Haider"
+    ]
+  },
+  "seemore": {
+    "title": "See more"
+  },
+  "categories": {
+    "title": "Book Categories",
+    "list": [
+      "Literature",
+      "Fiction",
+      "Non-Fiction",
+      "Poetry",
+      "Children's Books",
+      "Academic Books",
+      "Biography & Memoir",
+      "History",
+      "Religion & Spirituality",
+      "Science & Technology",
+      "Self-Help",
+      "Health & Wellness",
+      "Cookbooks",
+      "Travel",
+      "Politics",
+      "Art & Photography",
+      "Comics & Graphic Novels",
+      "Business & Economics",
+      "Language & Grammar",
+      "Entrance & Job Exam Guides"
+    ]
+  },
+  "bookCollection": {
+    "bookFair": "Book Fair 2025",
+    "newBooks": "New Books",
+    "ittadiBooks": "Ittadi Books",
+    "bhumikaBooks": "Bhumika Books",
+    "bestSeller": "Best Sellers",
+    "awardWinning": "Award Winning"
+  },
+  "bookCard": {
+    "addToCart": "Add to Cart",
+    "removeFromCart": "Remove from Cart",
+    "removeFromWishlist": "Remove from Wishlist",
+    "addToWishlist": "Add to Wishlist",
+    "buyNow": "Buy Now",
+    "off": "Off",
+    "viewDetails": "View Details"
+  },
+  "bookDetails": {
+    "translator": "Translator",
+    "editor": "Editor",
+    "checkitout": "Take a look",
+    "customerReviews": "Customer Reviews",
+    "noReviews": "No reviews yet.",
+    "alreadyInWishlist": "Already in Wishlist",
+    "purchaseNow": "Purchase Now",
+    "alreadyInCart": "Already in Cart",
+    "addToCart": "Add to Cart",
+    "addToWishlist": "Add to Wishlist",
+    "price": "Price",
+    "off": "Off",
+    "author": "Author",
+    "publisher": "Publisher",
+    "publishedDate": "Published Date",
+    "isbn": "ISBN",
+    "format": "Format",
+    "edition": "Edition",
+    "category": "Category",
+    "language": "Language",
+    "pages": "Pages",
+    "description": "Book Description",
+    "inStok": "In Stock",
+    "stockOut": "Stock Out",
+    "unavailable": "Currently Unavailable",
+    "outOfStock": "Out of Stock",
+    "rating": "Your Rating",
+    "review": "Reviews",
+    "writeReview": "Write a Review",
+    "yourName": "Your Name",
+    "writeYourReview": "Your review here",
+    "writeYourReviewHere": "Write your review here...",
+    "submitReview": "Submit Review",
+    "vatText": "Inclusive of VAT",
+    "fastDelivery": "Fast delivery within 2 – 4 days",
+    "securePayment": "Secure checkout • Cash on Delivery",
+    "seemore": "See more",
+    "relatedBooks": "Related Books"
+  },
+  "ratingNumber": {
+    "0_5": "0.5",
+    "1_0": "1",
+    "1_5": "1.5",
+    "2_0": "2",
+    "2_5": "2.5",
+    "3_0": "3",
+    "3_5": "3.5",
+    "4_0": "4",
+    "4_5": "4.5",
+    "5_0": "5"
+  },
+  "about": {
+    "title": "About Us",
+    "whoWeAreTitle": "Who We Are",
+    "description": "At our book platform, we believe in the power of storytelling and knowledge. Our goal is to make quality books in both Bangla and English available to every reader. Whether you're a student, researcher, or casual reader, we offer a rich collection across genres. With a focus on both timeless classics and modern literature, we are committed to enriching minds, sparking imagination, and building a community of book lovers.",
+    "whoWeAreDescription": "We are a passionate team of book lovers, educators, and tech enthusiasts dedicated to making reading more accessible for everyone. Our mission is to connect readers with meaningful content — from timeless classics to contemporary works — in both Bangla and English. We believe books can change lives, and we aim to create a platform where knowledge, creativity, and curiosity come together.",
+    "quote": "Books are a uniquely portable magic – and we’re here to share that magic in Bangla and English with every generation."
+  },
+  "contact": {
+    "title": "Contact Us",
+    "name": "Name",
+    "namePlaceholder": "Enter your full name",
+    "email": "Email",
+    "emailPlaceholder": "Enter your email address",
+    "message": "Message",
+    "messagePlaceholder": "Write your message here...",
+    "sendMessage": "Send Message",
+    "successMessage": "Thank you! Your message has been sent successfully.",
+    "contactInfoTitle": "Our Contact Information",
+    "contactInfoAddress": "38, Banglabazar, 1st floor, Dhaka.",
+    "contactInfoPhone": "+880 1735 393639",
+    "contactInfoEmail": "info@ittadibooks.com"
+  },
+  "login": {
+    "title": "Sign in to your account",
+    "subtitle": "Don't have an account? Create a free account",
+    "email": "Email address",
+    "emailPlaceholder": "Enter your email",
+    "password": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "forgot": "Forgot password?",
+    "submit": "Sign in",
+    "google": "Sign in with Google"
+  },
+  "signup": {
+    "title": "Create a new account",
+    "subtitle": "Already have an account? Sign in",
+    "name": "Full Name",
+    "namePlaceholder": "Enter your name",
+    "email": "Email Address",
+    "emailPlaceholder": "Enter your email",
+    "password": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "submit": "Sign up",
+    "google": "Sign up with Google"
+  },
+  "ittadiBooks": {
+    "title": "Ittadi Books",
+    "subtitle": "Explore our curated selection of Ittadi publications.",
+    "prev": "Prev",
+    "next": "Next"
+  },
+  "bhumikaBooks": {
+    "title": "Bhumika Books",
+    "subtitle": "Discover the latest releases and selected titles from Bhumika Publications.",
+    "prev": "Prev",
+    "next": "Next"
+  },
+  "bestSellerBooks": {
+    "title": "Best Sellers",
+    "subtitle": "Check out our top-selling books and reader favorites.",
+    "prev": "Prev",
+    "next": "Next"
+  },
+  "awardWinners": {
+    "title": "Award Winners",
+    "subtitle": "Explore books that have won prestigious awards and accolades.",
+    "prev": "Prev",
+    "next": "Next"
+  },
+  "allBooks": {
+    "title": "All Books",
+    "subtitle": "Browse our complete collection of books from all publishers.",
+    "prev": "Prev",
+    "next": "Next"
+  },
+  "newBooks": {
+    "title": "New Books",
+    "subtitle": "Discover the latest releases and timeless classics from Ittadi Publications.",
+    "prev": "Prev",
+    "next": "Next"
+  },
+  "bookFair2025": {
+    "title": "Book Fair 2025",
+    "subtitle": "Discover our finest collection of titles featured in the Book Fair 2025.",
+    "prev": "Prev",
+    "next": "Next"
+  },
+
+  "authorsPage": {
+    "title": "Our Authors",
+    "prev": "Prev",
+    "next": "Next",
+    "viewDetails": "View Details",
+    "follow": "Follow",
+    "following": "Following",
+    "search": "Search",
+    "searchPlaceholder": "Search authors..."
+  },
+  "authorDetails": {
+    "authorNotFound": "Author Not Found",
+    "followers": "Followers",
+    "follow": "Follow",
+    "following": "Following",
+    "booksBy": "'s Books"
+  },
+  "checkousssst": {
+    "shippingTitle": "Shipping Address",
+    "editShipping": "Edit Shipping Address",
+    "saveShipping": "Save Shipping Address",
+    "orderSummary": "Order Summary",
+    "qty": "Qty",
+    "total": "Total",
+    "proceed": "Proceed to Payment",
+    "name": "Name",
+    "address": "Address",
+    "country": "Country",
+    "fields": {
+      "fullName": "Full Name",
+      "street": "Street",
+      "city": "City",
+      "state": "State",
+      "zip": "Zip Code",
+      "country": "Country"
+    }
+  },
+  "checkout": {
+    "shippingTitle": "Shipping Address",
+    "shipping": "Shipping",
+    "selectShipping": "Select Shipping Option",
+    "editShipping": "Edit Shipping Address",
+    "addShipping": "Add Shipping Address",
+    "saveShipping": "Save Shipping Address",
+    "orderSummary": "Order Summary",
+    "qty": "Qty",
+    "total": "Total",
+    "proceed": "Proceed to Payment",
+    "confirm": "Confirm Order",
+    "selectMethod": "Select Payment Method",
+    "methods": {
+      "ssl": "Pay with SSLCommerz",
+      "cod": "Cash on Delivery"
+    },
+    "address": "Address",
+    "fields": {
+      "fullName": "Full Name",
+      "street": "Street",
+      "city": "City",
+      "state": "State",
+      "zip": "Zip Code",
+      "country": "Country"
+    },
+    "promoCode": {
+      "label": "Promo Code",
+      "placeholder": "Enter code (e.g. SAVE100)",
+      "apply": "Apply",
+      "success": "Promo code applied"
+    },
+    "giftWrap": {
+      "label": "Gift Wrap",
+      "select": "Add Gift Wrap for ৳{{amount}}"
+    },
+    "summary": {
+      "subtotal": "Subtotal",
+      "discount": "Discount",
+      "giftWrap": "Gift Wrap",
+      "grandTotal": "Grand Total"
+    },
+    "summaryModal": {
+      "title": "Checkout Summary",
+      "paymentMethod": "Payment Method",
+      "name": "Name",
+      "address": "Address",
+      "items": "Items",
+      "subtotal": "Subtotal",
+      "discount": "Discount",
+      "giftWrap": "Gift Wrap",
+      "total": "Total",
+      "cancel": "Cancel",
+      "confirmOrder": "Confirm Order",
+      "orderPlacedAlert": "Order placed with {{method}}"
+    },
+    "methodsS": {
+      "ssl": "Pay with SSLCommerz",
+      "cod": "Cash on Delivery"
+    }
+  },
+  "ordersuccess": {
+    "successTitle": "🎉 Order Placed Successfully!",
+    "orderIdLabel": "Your Order ID",
+    "thankYou": "Thank you for your purchase. A confirmation has been sent to your email.",
+    "backToHome": "Back to Home"
+  }
+}

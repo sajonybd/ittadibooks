@@ -1,0 +1,306 @@
+ 
+@import "tailwindcss";
+@plugin "daisyui";
+
+html,
+body {
+  
+  font-family: "Hind Siliguri", sans-serif;
+
+}
+
+
+.color-main {
+  color: #51acec;
+ --background: #ffffff;
+  --foreground: #171717;
+}
+ 
+ 
+
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  body,
+  html {
+    background-color: white !important;
+    color: black !important;
+  }
+
+  input,
+  textarea,
+  select {
+    background-color: white !important;
+    color: black !important;
+  }
+}
+/* @media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+} */
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+} 
+
+
+.tiptap {
+   
+  font-family: 'Inter', sans-serif;
+  color: #111827;
+  line-height: 1.7;
+  font-size: 1rem;
+
+  :first-child {
+    margin-top: 0;
+  }
+
+  /* Paragraphs */
+  p {
+    margin: 1rem 0;
+  }
+
+  /* Headings */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    line-height: 1.2;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    word-wrap: break-word;
+  }
+
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+  }
+
+  h2 {
+    font-size: 1.75rem;
+    font-weight: 600;
+  }
+
+  h3 {
+    font-size: 1.5rem;
+    font-weight: 500;
+  }
+
+  h4 {
+    font-size: 1.25rem;
+  }
+
+  h5 {
+    font-size: 1.1rem;
+  }
+
+  h6 {
+    font-size: 1rem;
+  }
+
+  /* Lists */
+  ul,
+  ol {
+    margin: 1rem 0;
+    padding-left: 1.5rem;
+
+    li {
+      margin-bottom: 0.5rem;
+      line-height: 1.6;
+    }
+
+    li p {
+      margin: 0.25rem 0;
+    }
+  }
+
+  /* Code & preformatted text */
+  code {
+    background-color: #f5f3ff;
+    /* light purple */
+    border-radius: 0.4rem;
+    color: #111827;
+    font-size: 0.85rem;
+    padding: 0.25em 0.35em;
+    font-family: 'JetBrainsMono', monospace;
+  }
+
+  pre {
+    background: #1f2937;
+    /* dark bg */
+    border-radius: 0.5rem;
+    color: #f9fafb;
+    font-family: 'JetBrainsMono', monospace;
+    margin: 1.5rem 0;
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+
+    code {
+      background: none;
+      color: inherit;
+      font-size: 0.85rem;
+      padding: 0;
+    }
+  }
+
+  /* Blockquote */
+  blockquote {
+    border-left: 3px solid #d1d5db;
+    /* gray-300 */
+    padding-left: 1rem;
+    margin: 1.5rem 0;
+    font-style: italic;
+    background-color: #f9fafb;
+    /* subtle highlight */
+    color: #374151;
+    /* gray-700 */
+  }
+
+  /* Horizontal Rule */
+  hr {
+    border: none;
+    border-top: 1px solid #d1d5db;
+    /* gray-300 */
+    margin: 2rem 0;
+  }
+
+  /* Images */
+  img {
+    max-width: 100%;
+    display: block;
+    margin: 1rem auto;
+    border-radius: 0.5rem;
+    
+  }
+
+  /* Links */
+  a {
+    color: #2563eb;
+    /* blue-600 */
+    text-decoration: underline;
+    transition: color 0.2s;
+  }
+
+  a:hover {
+    color: #1d4ed8;
+    /* darker blue */
+  }
+
+  /* Inline text marks */
+  strong {
+    font-weight: 700;
+  }
+
+  em {
+    font-style: italic;
+  }
+
+  del {
+    text-decoration: line-through;
+  }
+
+  /* In your editor.css */
+  .tiptap ul {
+    list-style-type: disc;
+    /* bullet */
+    padding-left: 1.5rem;
+  }
+
+  .tiptap ol {
+    list-style-type: decimal;
+    /* numbers */
+    padding-left: 1.5rem;
+  }
+
+  .tiptap li {
+    margin-bottom: 0.5rem;
+  }
+
+  /* Tailwind override if you want to keep prose */
+  .prose ul {
+    list-style-type: disc;
+    padding-left: 1.5rem;
+  }
+
+  .prose ol {
+    list-style-type: decimal;
+    padding-left: 1.5rem;
+  }
+
+
+  /* Responsive typography */
+  @media (min-width: 640px) {
+    h1 {
+      font-size: 2.25rem;
+    }
+
+    h2 {
+      font-size: 2rem;
+    }
+
+    h3 {
+      font-size: 1.75rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    h1 {
+      font-size: 2.5rem;
+    }
+
+    h2 {
+      font-size: 2.25rem;
+    }
+
+    h3 {
+      font-size: 2rem;
+    }
+  }
+}
+
+
+
+.tiptap img {
+  display: block;
+  margin: 1.5rem auto;
+  max-width: 100%;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+
+
+
+.ProseMirror img.ProseMirror-selectednode {
+  outline: 2px solid #3b82f6;
+  position: relative;
+}
+
+.ProseMirror img.ProseMirror-selectednode::after {
+  content: "🗑 Delete";
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(255, 0, 0, 0.8);
+  color: white;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+

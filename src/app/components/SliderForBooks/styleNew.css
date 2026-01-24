@@ -1,0 +1,36 @@
+ 
+
+.swiper {
+  width: 100%;
+  height: 100%;
+}
+
+.swiper-slide {
+   
+  /* max-height: 500px; */
+ height: 100%;
+
+  /* Center slide text vertically */
+ 
+}
+
+/* .swiper-slide img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+} */
+
+/* For very large (4K) screens */
+@media (min-width: 3840px) {
+  .banner-5xl {
+    height: 700px !important;
+  }
+}
+
+/* For 2K / ultrawide monitors */
+@media (min-width: 2560px) and (max-width: 3839px) {
+  .banner-4xl {
+    height: 670px !important;
+  }
+}

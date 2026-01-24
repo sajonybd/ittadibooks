@@ -1,0 +1,22 @@
+.MuiModal-backdrop {
+    display: none !important;
+}
+
+
+
+
+viewer-toolbar {
+  display: none !important;
+}
+
+
+.rpv-core__minimal-button{
+  display: hidden !important;
+}
+
+.modalDiv{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  
+}
