@@ -8,7 +8,7 @@ export async function GET(req, context) {
 
    
  
-  
+
  const filePath = path.join(
     process.cwd(),
     "src",
