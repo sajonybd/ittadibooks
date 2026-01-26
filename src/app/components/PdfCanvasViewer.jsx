@@ -10,7 +10,7 @@ export default function PdfCanvasViewer({ pdfId }) {
 
   useEffect(() => {
     const load = async () => {
-      const res = await fetch(`/api/pdf/view/${pdfId}`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/pdf/view/${pdfId}`);
       const data = await res.json();
       setPages(data.pages);
       console.log("Loaded pages:", data.pages);

@@ -16,7 +16,7 @@ const SecurePdfViewer = ({ pdfId }) => {
   useEffect(() => {
     const fetchPdf = async () => {
       try {
-        const res = await fetch(`/api/pdf/protectpdf/${pdfId}`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/pdf/protectpdf/${pdfId}`);
         if (!res.ok) throw new Error("PDF not found");
 
         const blob = await res.blob();

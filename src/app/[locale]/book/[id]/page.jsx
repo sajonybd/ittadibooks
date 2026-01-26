@@ -91,7 +91,7 @@ export default function BookDetailPage() {
   useEffect(() => {
     const fetchPdf = async () => {
       try {
-        const res = await fetch(`/api/pdf/protectpdf/test`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/pdf/protectpdf/test`);
         if (!res.ok) throw new Error("PDF not found");
 
         const blob = await res.blob();

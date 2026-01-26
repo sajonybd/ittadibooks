@@ -16,7 +16,7 @@ export default function SecurePdfViewer({ pdfId, watermarkText = "CONFIDENTIAL" 
 
         const loadPdf = async () => {
             try {
-                const res = await fetch(`/api/pdf/view/${pdfId}`);
+                const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/pdf/view/${pdfId}`);
                 if (!res.ok) throw new Error("Failed to load PDF");
 
                 const blob = await res.blob();

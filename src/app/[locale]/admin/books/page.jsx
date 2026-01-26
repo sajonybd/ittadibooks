@@ -234,7 +234,7 @@ export default function AdminBooksPage() {
   };
 
   async function handleRefresh() {
-    await fetch("/api/reloadBooks", { method: "POST" });
+    await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/reloadBooks`, { method: "POST" });
     alert("Books cache refreshed!");
   }
 

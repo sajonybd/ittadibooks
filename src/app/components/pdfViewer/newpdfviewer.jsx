@@ -89,7 +89,7 @@ export default function SecurePdfViewer({ bookId }) {
   return (
     <div style={{ userSelect: "none" }}>
       <Document
-        file={`/api/pdf/${bookId}`}
+        file={`${process.env.NEXT_PUBLIC_BASE_URL}/api/pdf/${bookId}`}
         onLoadSuccess={({ numPages }) => setNumPages(numPages)}
         loading="Loading PDF..."
       >
