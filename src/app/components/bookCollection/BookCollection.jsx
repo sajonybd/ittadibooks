@@ -28,14 +28,14 @@ export default function BookCollection({ titleText, collection, page }) {
 
   const seemore = useTranslations("seemore");
   return (
-    <div className=" mt-7 mb-5  h-full">
-      <div className="flex items-center justify-between w-full h-full bg-[#51acec] px-5 py-3 rounded-lg mb-7 shadow-lg border-b-2 border-b-[#444444]">
+    <div className="mt-4 mb-3  h-full">
+      <div className="flex items-center justify-between w-full h-full bg-[#51acec] px-5 py-3 rounded-lg mb-4 shadow-lg border-b-2 border-b-[#444444]">
         <h3 className="text-base lg:text-xl font-semibold">{titleText}</h3>
         <button
           onClick={() => {
             window.location.href = `${process.env.NEXT_PUBLIC_BASE_URL}${page}`; // Navigate to the page
           }}
-          className="flex items-center lg:gap-1"
+          className="flex items-center lg:gap-1 cursor-pointer"
         >
           <span className="lg:text-lg text-sm">{seemore("title")}</span>
           <span className="text-[#1f1f1f]">

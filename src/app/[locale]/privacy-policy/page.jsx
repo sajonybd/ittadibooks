@@ -115,7 +115,7 @@ export default function PrivacyPolicy() {
         </div>
       </section>
 
-      <p className="mt-10 text-sm text-gray-500 text-center">
+      <p className="mt-2 text-sm text-gray-500 text-center">
         যদি এই নীতিমালা সম্পর্কে কোনো প্রশ্ন থাকে, অনুগ্রহ করে আমাদের সাথে যোগাযোগ করুন:
         <br />
         ✉️{" "}

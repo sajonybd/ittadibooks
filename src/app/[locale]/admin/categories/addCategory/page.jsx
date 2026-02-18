@@ -65,7 +65,7 @@ export default function AddCategoryPage() {
   };
 
   return (
-    <div className="max-w-xl mx-auto p-4 bg-white shadow rounded mt-10">
+    <div className="max-w-xl mx-auto p-4 bg-white shadow rounded mt-2">
       <h1 className="text-xl font-bold mb-4">Add New Category</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Main Category */}

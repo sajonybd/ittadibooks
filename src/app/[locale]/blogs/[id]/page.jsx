@@ -27,8 +27,8 @@ const SingleBlog = () => {
         fetchBlog();
     }, [id]);
 
-    if (loading) return <p className="text-center mt-10">Loading...</p>;
-    if (error) return <p className="text-center mt-10 text-red-500">{error}</p>;
+    if (loading) return <p className="text-center mt-2">Loading...</p>;
+    if (error) return <p className="text-center mt-2 text-red-500">{error}</p>;
     if (!blog) return null;
 
     return (

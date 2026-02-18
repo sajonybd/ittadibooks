@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export default function Footer() {
   return (
-    <footer className="bg-gray-900 text-gray-200 py-10 mt-05">
+    <footer className="bg-gray-900 text-gray-200 py-6 mt-4">
       <div className="container mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-8">
         {/* About Section */}
         <div>
@@ -83,7 +83,7 @@ export default function Footer() {
       </div>
 
       {/* Bottom Bar */}
-      <div className="mt-10 border-t border-gray-700 pt-6 text-center text-sm text-gray-400">
+      <div className="mt-6 border-t border-gray-700 pt-6 text-center text-sm text-gray-400">
         &copy; {new Date().getFullYear()} Ittadi Books. All rights reserved.
         Developed by{" "}
         <a

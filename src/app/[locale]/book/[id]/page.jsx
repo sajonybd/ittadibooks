@@ -164,16 +164,17 @@ export default function BookDetailPage() {
 
   useEffect(() => {
     const checkWishlist = async () => {
-      if (!session?.data?.user?.email || !book?.bookId) return;
+      const book_id = book?.bookId || book?._id;
+      if (!session?.data?.user?.email || !book_id) return;
       try {
         const res = await axios.get(
-          `${process.env.NEXT_PUBLIC_BASE_URL}/api/wishlist/check?bookId=${book.bookId}`
+          `${process.env.NEXT_PUBLIC_BASE_URL}/api/wishlist/check?bookId=${book_id}`
         );
         setInWishlist(res.data?.inWishlist || false);
       } catch (error) { }
     };
     checkWishlist();
-  }, [session, book?.bookId]);
+  }, [session?.data?.user?.email, book?.bookId, book?._id]);
 
   const handleAddToWishlist = async () => {
     const email = session?.data?.user?.email;
@@ -224,14 +225,15 @@ export default function BookDetailPage() {
   const [inCart, setInCart] = useState(false);
 
   useEffect(() => {
-    if (!book?.bookId) return;
+    const book_id = book?.bookId || book?._id;
+    if (!book_id) return;
 
     // Check in localStorage first
     const existingBookIds =
       JSON.parse(localStorage.getItem("cartBookIds")) || [];
-    if (existingBookIds.includes(book.bookId)) {
+    if (existingBookIds.includes(book_id)) {
       setInCart(true);
-      return; // no need to call API if you're only relying on localStorage
+      return; 
     }
 
     // If you still want to check from API as fallback
@@ -239,15 +241,39 @@ export default function BookDetailPage() {
       if (!session?.data?.user?.email) return;
       try {
         const res = await axios.get(
-          `${process.env.NEXT_PUBLIC_BASE_URL}/api/cart/check?bookId=${book.bookId}`
+          `${process.env.NEXT_PUBLIC_BASE_URL}/api/cart/check?bookId=${book_id}`
         );
         setInCart(res.data?.inCart || false);
       } catch (error) {
-        // // console.error("Cart check failed", error);
       }
     };
     checkCart();
-  }, [session, book?.bookId]);
+  }, [session?.data?.user?.email, book?.bookId, book?._id]);
+
+  const [relatedBooks, setRelatedBooks] = useState([]);
+  useEffect(() => {
+    const categoryName = book?.categories?.[0]?.category;
+    if (!categoryName) return;
+    const fetchRelatedBooks = async () => {
+      try {
+        const res = await axios.get(`${process.env.NEXT_PUBLIC_BASE_URL}/api/book/getAll`);
+        if (res.data?.success) {
+          const filtered = res.data.books.filter(
+            (b) => b._id !== book._id && b.categories?.[0]?.category === categoryName
+          );
+          setRelatedBooks(filtered.slice(0, 8));
+        }
+      } catch (error) { }
+    };
+    fetchRelatedBooks();
+  }, [book?._id, book?.categories?.[0]?.category]);
+
+  const handleBuyNow = async () => {
+    if (!inCart) {
+      handleAddToCart();
+    }
+    router.push("/cart");
+  };
 
   const handleMouseMove = (e) => {
     const bounds = imageRef.current.getBoundingClientRect();
@@ -288,32 +314,32 @@ export default function BookDetailPage() {
     setOpen(!open);
   }
 
+
+
   return (
-    <div className="px-5 lg:px-20 py-12 font-sans ">
-      <div className="flex flex-col lg:flex-row gap-10 items-start">
+    <div className="px-4 lg:px-20 py-8 font-sans ">
+      <div className="flex flex-col lg:flex-row gap-8 items-start">
         {/* Left Section */}
-        <div className="w-full lg:w-2.5/3 space-y-12">
-          <div className="flex flex-col md:flex-row gap-16 items-start">
+        <div className="w-full lg:w-2.5/3 space-y-4">
+          <div className="flex flex-col md:flex-row gap-10 items-start">
             <div className="flex flex-col w-full lg:w-1/3">
               <div
                 ref={imageRef}
                 onMouseMove={handleMouseMove}
                 onMouseEnter={() => setIsHovering(true)}
                 onMouseLeave={() => setIsHovering(false)}
-                className="w-full shrink-0 overflow-hidden rounded-lg shadow-md cursor-zoom-in"
+                className="w-full shrink-0 overflow-hidden rounded-lg shadow-md"
               >
                 <Image
                   src={book.cover?.url}
                   alt={book.title?.bn || book.title?.en}
-                  width={300}
-                  height={400}
-                  className={`w-full lg:h-auto transition-transform duration-300 ${isHovering ? "scale-150" : "scale-100"
-                    }`}
-                  style={{ transformOrigin: `${position.x}% ${position.y}%` }}
+                  width={260}
+                  height={260}
+                  className="w-full lg:h-auto transition-transform duration-300"
                 />
               </div>
               <div>
-                <button onClick={hadnleShowPdf} className="border-2 border-[#51acec] w-full p-2 rounded-lg text-[#326174] hover:bg-[#51acec] hover:text-white mt-4">
+                <button onClick={hadnleShowPdf} className="border-2 border-[#51acec] w-full p-2 rounded-lg text-[#326174] hover:bg-[#51acec] hover:text-white mt-4 cursor-pointer">
                   {t("checkitout")}
                 </button>
 
@@ -371,9 +397,11 @@ export default function BookDetailPage() {
                   <p className="text-lg text-gray-700">
                     <span className="font-semibold">{t("translator")}: </span>
                     {book.translators.map((tr, i) => {
-                      const [banglaName, englishName] = tr.name.includes("/")
+                      const names = tr.name.includes("/")
                         ? tr.name.split("/").map((part) => part.trim())
-                        : [tr.name.trim(), ""];
+                        : [tr.name.trim()];
+
+                      const banglaName = names[0];
 
                       return (
                         <span key={i}>
@@ -388,7 +416,6 @@ export default function BookDetailPage() {
                           >
                             {banglaName}
                           </span>
-                          {/* {englishName && ` / ${englishName}`} */}
                           {i < book.translators.length - 1 && ", "}
                         </span>
                       );
@@ -398,13 +425,15 @@ export default function BookDetailPage() {
 
               {/* Editor */}
               {book?.editors?.length > 0 &&
-                book.editors.some((ed) => ed.name?.trim() !== "") && (
+                book.editors.some((ed) => ed.name?.trim() !== "" && ed.name?.trim() !== null) && (
                   <p className="text-lg text-gray-700">
                     <span className="font-semibold">{t("editor")}: </span>
                     {book.editors.map((ed, i) => {
-                      const [banglaName, englishName] = ed.name.includes("/")
+                      const names = ed.name.includes("/")
                         ? ed.name.split("/").map((part) => part.trim())
-                        : [ed.name.trim(), ""];
+                        : [ed.name.trim()];
+
+                      const banglaName = names[0];
 
                       return (
                         <span key={i}>
@@ -419,7 +448,6 @@ export default function BookDetailPage() {
                           >
                             {banglaName}
                           </span>
-                          {/* {englishName && ` / ${englishName}`} */}
                           {i < book.editors.length - 1 && ", "}
                         </span>
                       );
@@ -428,7 +456,7 @@ export default function BookDetailPage() {
                 )}
 
               {/* Ratings */}
-              <div className="mt-6 text-gray-700">
+              <div className="mt-3 text-gray-700">
                 <div className="flex items-center gap-3">
                   <span className="text-yellow-500 text-xl">
                     ★ {averageRating.toFixed(1)}
@@ -452,7 +480,7 @@ export default function BookDetailPage() {
 
                 </div>
               </div>
-              <div className="mt-10 grid grid-cols-1 gap-x-8 gap-y-4 text-base text-gray-700">
+              <div className="mt-1 grid grid-cols-1 gap-x-8 gap-y-0.5 text-base text-gray-700">
 
                 <p>
                   <strong>{t("publisher")}: </strong>
@@ -499,7 +527,7 @@ export default function BookDetailPage() {
 
               </div>
               {/* Plain Price & Actions */}
-              <div className="my-6 space-y-3">
+              <div className="my-1 space-y-2">
                 <div className="flex items-center gap-4">
                   <h2 className="text-2xl font-bold text-gray-900">
                     ৳ {book.discountedPrice}
@@ -518,22 +546,21 @@ export default function BookDetailPage() {
 
                 {/* <p className="text-sm text-gray-500">{t("vatText")}</p> */}
 
-                <div className="flex flex-wrap gap-3 mt-2">
-                  {inCart ? (
-                    <button
-                      onClick={() => router.push("/cart")}
-                      className="bg-[#51acec] text-white text-lg font-semibold py-2 px-4 rounded-md"
-                    >
-                      {t("purchaseNow")}
-                    </button>
-                  ) : (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  
                     <button
                       onClick={handleAddToCart}
-                      className="bg-[#51acec] hover:bg-[#5ca5c5] text-white text-lg font-semibold py-2 px-4 rounded-md w-full lg:w-auto"
+                      className="bg-[#51acec] hover:bg-[#5ca5c5] text-white text-lg font-semibold py-2 px-4 rounded-md w-full lg:w-auto cursor-pointer"
                     >
                       🛒 {t("addToCart")}
                     </button>
-                  )}
+
+                  <button
+                    onClick={handleBuyNow}
+                    className="bg-orange-600 hover:bg-orange-700 text-white text-lg font-semibold py-2 px-4 rounded-md w-full lg:w-auto cursor-pointer"
+                  >
+                    🚀 {t("purchaseNow")}
+                  </button>
 
                   {inWishlist ? (
                     <span className="text-green-700 font-medium py-2 px-4">
@@ -542,7 +569,7 @@ export default function BookDetailPage() {
                   ) : (
                     <button
                       onClick={handleAddToWishlist}
-                      className="bg-gray-300 shadow-md  text-gray-800 text-lg font-semibold py-2 px-4 rounded-md w-full lg:w-auto"
+                      className="bg-gray-300 shadow-md  text-gray-800 text-lg font-semibold py-2 px-4 rounded-md w-full lg:w-auto cursor-pointer"
                     >
                       ❤️ {t("addToWishlist")}
                     </button>
@@ -553,12 +580,26 @@ export default function BookDetailPage() {
           </div>
 
           {/* Description */}
-          <div className="text-lg text-gray-700 leading-relaxed">
+          <div className="text-lg text-gray-700 leading-relaxed mt-2">
             <h2 className="text-2xl font-semibold text-gray-800 mb-3">
               {t("description")}
             </h2>
             <p>{book.description?.[locale]}</p>
           </div>
+
+          {/* Related Books */}
+          {relatedBooks.length > 0 && (
+            <div className="mt-12">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-6">
+                {t("relatedBooks") || "Related Books"}
+              </h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4">
+                {relatedBooks.map((b) => (
+                  <BookCard key={b._id} book={b} />
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Ratings */}
 

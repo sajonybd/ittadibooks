@@ -106,7 +106,7 @@ export default function HomeBooks({ allBooks }) {
             <Breadcrumbs sort={sort} filters={filters} />
             {paginatedBooks.length > 0 ? (
               <>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4">
                   {paginatedBooks.map((book, idx) => (
                     <BookCard key={idx} book={book} />
                   ))}
@@ -235,7 +235,7 @@ export default function HomeBooks({ allBooks }) {
             <div className="flex justify-center mt-6">
               <Link
                 href={"/allbooks"}
-                className="inline-block px-6 py-2 rounded-lg font-medium text-white bg-[#51acec] hover:bg-[#4690ac] transition-colors duration-300 shadow-md m-10"
+                className="inline-block px-6 py-2 rounded-lg font-medium text-white bg-[#51acec] hover:bg-[#4690ac] transition-colors duration-300 shadow-md m-4 cursor-pointer"
               >
                 See More
               </Link>

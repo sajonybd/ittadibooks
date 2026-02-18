@@ -23,7 +23,7 @@ export default function VideoSection() {
 
   return (
     <section className=" ">
-      <div className="flex items-center justify-between w-full h-full bg-[#51acec] px-5 py-3 rounded-lg mb-7 shadow-lg border-b-2 border-b-[#444444]">
+      <div className="flex items-center justify-between w-full h-full bg-[#51acec] px-5 py-3 rounded-lg mb-3 shadow-lg border-b-2 border-b-[#444444]">
         <h3 className="text-base lg:text-xl font-semibold">
           বই এবং লেখক গল্প (ভিডিও)
         </h3>

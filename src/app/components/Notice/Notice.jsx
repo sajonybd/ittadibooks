@@ -19,7 +19,7 @@ export default function Notice() {
   return (
     <Marquee
       speed={30}
-      className="text-lg text-black bg-[#51acec] p-3 mb-5 mt-10 lg:mb-10"
+      className="text-lg text-black bg-[#51acec] p-3 mb-3"
     >
       {notice && notice}
       {/* ২৩ বছরে ইত্যাদি গ্রন্থপ্রকাশ। সকল লেখক, পাঠক ও শুভানুধ্যায়ীকে জানাই

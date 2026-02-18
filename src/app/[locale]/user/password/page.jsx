@@ -31,7 +31,7 @@ export default function ChangePasswordPage() {
   };
 
   return (
-    <div className="max-w-xl mx-auto mt-10 p-6 bg-white rounded shadow">
+    <div className="max-w-xl mx-auto mt-2 p-6 bg-white rounded shadow">
       <h2 className="text-xl font-semibold mb-4">Change Password</h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">

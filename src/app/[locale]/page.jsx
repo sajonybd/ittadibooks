@@ -15,8 +15,8 @@ export default async function HomePage() {
   const allBooks = await getAllBooks();
 
   return (
-    <div className="bg-gray-200 w-full lg:py-10 min-h-screen">
-      <div className="max-w-full w-full mx-auto flex flex-col lg:flex-row gap-2 lg:gap-10">
+    <div className="bg-gray-200 w-full lg:py-4 min-h-screen">
+      <div className="max-w-full w-full mx-auto flex flex-col lg:flex-row gap-2 lg:gap-4">
         <HomeBooks allBooks={allBooks} />
       </div>
     </div>

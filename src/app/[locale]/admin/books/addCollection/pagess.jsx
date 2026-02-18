@@ -45,7 +45,7 @@
 //   };
 
 //   return (
-//     <div className="max-w-xl mx-auto mt-10 bg-white p-6 rounded-md shadow-md">
+//     <div className="max-w-xl mx-auto mt-2 bg-white p-6 rounded-md shadow-md">
 //       <h2 className="text-xl font-bold mb-4">Add Book Collection</h2>
 //       <form onSubmit={handleSubmit}>
 //         <input

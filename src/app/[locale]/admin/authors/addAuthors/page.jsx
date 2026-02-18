@@ -90,7 +90,7 @@ export default function AddAuthorPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto p-6 bg-white rounded-xl shadow-md mt-10">
+    <div className="max-w-3xl mx-auto p-6 bg-white rounded-xl shadow-md mt-2">
       <h2 className="text-2xl font-bold mb-6 text-gray-800">Add New Author</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Name fields */}

@@ -15,18 +15,12 @@ import WhatsAppButton from "../components/WhatsAppButton/WhatsAppButton";
 import PageWrapper from "../components/PageWrapper";
 
 // Fonts
-import { Hind_Siliguri, Baloo_Da_2 } from "next/font/google";
+import localFont from "next/font/local";
 
-const hindSiliguri = Hind_Siliguri({
-  subsets: ["latin"],
-  weight: ["300","400","500","600","700"],
+const notoSerifBengali = localFont({
+  src: "../../lib/NotoSerifBengali-VariableFont_wdth,wght.ttf",
   display: "swap",
-});
-
-const balooDa2 = Baloo_Da_2({
-  subsets: ["latin"],
-  weight: ["400","500","600","700","800"],
-  display: "swap",
+  variable: "--font-noto-serif-bengali",
 });
 
 const localMessagesMap = {
@@ -48,7 +42,7 @@ export default async function LocaleLayout({ children, params: paramsPromise }) 
 
   return (
     <html lang={locale} data-theme="light">
-      <body className={`${hindSiliguri.className} ${balooDa2.className}`}>
+      <body className={notoSerifBengali.className}>
         <AuthProvider>
           <NextIntlClientProvider locale={locale} messages={messages}>
             <Navbar />

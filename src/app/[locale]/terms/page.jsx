@@ -65,7 +65,7 @@ export default function TermsConditions() {
         </div>
       </section>
 
-      <p className="mt-10 text-sm text-gray-500 text-center">
+      <p className="mt-2 text-sm text-gray-500 text-center">
         নোট: ইত্যাদি গ্রন্থ প্রকাশ কর্তৃপক্ষ যেকোনো সময় শর্তাবলী পরিবর্তনের অধিকার সংরক্ষণ করে।
       </p>
     </div>

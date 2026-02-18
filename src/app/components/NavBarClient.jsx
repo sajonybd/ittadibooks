@@ -73,11 +73,9 @@ export default function NavBarClient({books}) {
   }
 
   function handleSelect(book) {
-    // Handle book selection (e.g., navigate or display details)
-
     setResults([]);
     setQuery("");
-    window.location.replace(`/${locale}/book/${book._id}`);
+    router.push(`/${locale}/book/${book._id}`);
   }
 
   const pathname = usePathname();
@@ -383,14 +381,12 @@ export default function NavBarClient({books}) {
     <>
       <div className="xl:px-16 2xl:px-32 md:px-10 px-4 w-full bg-[#F9FAFB] shadow-md  top-0 z-[5000000000]">
         {/* upper section */}
-        <div className="hidden lg:flex w-full items-center justify-between  py-5 ">
+        <div className="hidden lg:flex w-full items-center justify-between  py-3 ">
           {/* large device */}
           {/* navlogo */}
-          <div
-            onClick={() => {
-              router.replace("/");
-            }}
-            className="hidden lg:flex gap-1 items-center cursor-default"
+          <Link
+            href="/"
+            className="hidden lg:flex gap-1 items-center cursor-pointer"
           >
             <Image
               width={100}
@@ -404,7 +400,7 @@ export default function NavBarClient({books}) {
                 {t("title")}
               </h3>
             </div>
-          </div>
+          </Link>
           {/* search */}
           <div className="hidden lg:flex h-[45px] relative">
             <input
@@ -440,7 +436,7 @@ export default function NavBarClient({books}) {
             )}
             <button
               aria-label="search"
-              className="flex justify-center items-center bg-[#51acec]  w-14 rounded-r-lg hover:saturate-150 duration-200"
+              className="flex justify-center items-center bg-[#51acec]  w-14 rounded-r-lg hover:saturate-150 duration-200 cursor-pointer"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -463,14 +459,12 @@ export default function NavBarClient({books}) {
           {/* cart,wishlist,login */}
           <div className="hidden lg:flex gap-2 lg:gap-5">
             {/* social icon */}
-            <div className="flex justify-center items-center gap-3">
+             <div className="flex justify-center items-center gap-3">
               {session?.data && session?.data?.user?.role === "admin" && (
-                <a href="/admin" className="text-[#51acec] font-semibold">
+                <Link href={`/${locale}/admin`} className="text-[#51acec] font-semibold cursor-pointer">
                   Admin Page
-                </a>
+                </Link>
               )}
-
-              
             </div>
             {/* language switch */}
             <LocaleSwitcher />
@@ -480,11 +474,12 @@ export default function NavBarClient({books}) {
               onClick={() => {
                 router.push("/user/wishlist");
               }}
-              className="relative flex items-center p-1"
+              className="relative flex items-center p-1 cursor-pointer"
             >
               <button
                 onClick={() => router.push("/user/wishlist")}
                 aria-label="wishlst"
+                className="cursor-pointer"
               >
                 {" "}
                 <svg
@@ -593,14 +588,13 @@ export default function NavBarClient({books}) {
 
                 {/* Sticky Checkout Button */}
                 <div className="p-4 border-t">
-                  <button
-                    onClick={() => {
-                      window.location.replace("/cart");
-                    }}
-                    className="bg-[#51acec] w-full p-3 rounded-lg text-white font-medium"
+                  <Link
+                    href={`/${locale}/cart`}
+                    onClick={() => setIsCartOpen(false)}
+                    className="bg-[#51acec] block text-center w-full p-3 rounded-lg text-white font-medium cursor-pointer"
                   >
                     {t5("purchaseNow")}
-                  </button>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -608,8 +602,8 @@ export default function NavBarClient({books}) {
             
             {/* login/signup */}
             {session?.data?.user ? (
-              <a href={"/user"}>
-                <div className="avatar">
+              <Link href={`/${locale}/user`}>
+                <div className="avatar cursor-pointer">
                   <div className="w-10 rounded-full">
                     <Image
                       src={
@@ -623,14 +617,14 @@ export default function NavBarClient({books}) {
                     />
                   </div>
                 </div>
-              </a>
+              </Link>
             ) : (
               <div className="hidden lg:flex items-center gap-2 w-full justify-center">
                 <button
                   onClick={() => {
                     router.push("/login");
                   }}
-                  className="text-[#51acec] font-semibold"
+                  className="text-[#51acec] font-semibold cursor-pointer"
                 >
                   {t("login")}
                 </button>
@@ -639,7 +633,7 @@ export default function NavBarClient({books}) {
                   onClick={() => {
                     router.push("/signup");
                   }}
-                  className="bg-[#51acec] text-white px-3 py-1 rounded-lg duration-150"
+                  className="bg-[#51acec] text-white px-3 py-1 rounded-lg duration-150 cursor-pointer"
                 >
                   {t("register")}
                 </button>
@@ -648,11 +642,11 @@ export default function NavBarClient({books}) {
           </div>
         </div>
         {/* sm device */}
-        <div className="lg:hidden py-4">
+        <div className="lg:hidden py-2">
           <div className="lg:hidden flex justify-between w-full">
             {/* navlogo */}
             {/* menu */}
-            <button id="menuButton" aria-label="menu">
+            <button id="menuButton" aria-label="menu" className="cursor-pointer">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width={24}
@@ -665,11 +659,9 @@ export default function NavBarClient({books}) {
                 ></path>
               </svg>
             </button>
-            <div
-              onClick={() => {
-                router.replace("/");
-              }}
-              className="lg:hidden flex gap-1 items-center cursor-default"
+            <Link
+              href="/"
+              className="lg:hidden flex gap-1 items-center cursor-pointer"
             >
               <Image
                 width={60}
@@ -683,33 +675,61 @@ export default function NavBarClient({books}) {
                   {t("title")}
                 </h3>
               </div>
-            </div>
-            {/* <LocaleSwitcher/> */}
-            {/* cart */}
-            <div id="menuButtonCart" className="flex items-center relative p-1">
-              <button aria-label="cart">
-                {" "}
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width={24}
-                  height={24}
-                  viewBox="0 0 56 56"
-                  className="hover:text-[#51acec] duration-150"
+            </Link>
+            {/* wishlist & cart sm */}
+            <div className="flex items-center gap-2">
+              <div
+                onClick={() => {
+                  router.push("/user/wishlist");
+                }}
+                className="flex items-center relative p-1 cursor-pointer"
+              >
+                <button
+                  onClick={() => router.push("/user/wishlist")}
+                  aria-label="wishlist"
                 >
-                  <path
-                    fill="currentColor"
-                    d="M20.008 39.649H47.36c.913 0 1.71-.75 1.71-1.758s-.797-1.758-1.71-1.758H20.406c-1.336 0-2.156-.938-2.367-2.367l-.375-2.461h29.742c3.422 0 5.18-2.11 5.672-5.461l1.875-12.399a7 7 0 0 0 .094-.89c0-1.125-.844-1.899-2.133-1.899H14.641l-.446-2.976c-.234-1.805-.89-2.72-3.28-2.72H2.687c-.937 0-1.734.822-1.734 1.76c0 .96.797 1.781 1.735 1.781h7.921l3.75 25.734c.493 3.328 2.25 5.414 5.649 5.414m31.054-25.454L49.4 25.422c-.188 1.453-.961 2.344-2.344 2.344l-29.906.023l-1.993-13.594ZM21.86 51.04a3.766 3.766 0 0 0 3.797-3.797a3.78 3.78 0 0 0-3.797-3.797c-2.132 0-3.82 1.688-3.82 3.797c0 2.133 1.688 3.797 3.82 3.797m21.914 0c2.133 0 3.82-1.664 3.82-3.797c0-2.11-1.687-3.797-3.82-3.797c-2.109 0-3.82 1.688-3.82 3.797c0 2.133 1.711 3.797 3.82 3.797"
-                  ></path>
-                </svg>
-              </button>
-              <span className="select-none absolute  font-semibold right-0 text-sm top-1 bg-red-500 rounded-full w-4 h-4 text-white flex justify-center items-center">
-                {cartCount}
-              </span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width={24}
+                    height={24}
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      fill="currentColor"
+                      fillRule="evenodd"
+                      d="M19.285 12.645a3.8 3.8 0 0 0-5.416-5.332q-.288.288-.732.707l-.823.775l-.823-.775q-.445-.42-.733-.707a3.8 3.8 0 0 0-5.374 0c-1.468 1.469-1.485 3.844-.054 5.32l6.984 6.984l6.97-6.972zm-14.75-6.18a5 5 0 0 1 7.072 0q.273.274.707.682q.432-.408.707-.683a5 5 0 0 1 7.125 7.017l-7.125 7.126a1 1 0 0 1-1.414 0L4.48 13.48a5 5 0 0 1 .055-7.017z"
+                    ></path>
+                  </svg>
+                </button>
+                <span className="absolute font-semibold right-0 text-sm top-1 bg-red-500 rounded-full w-4 h-4 text-white flex justify-center items-center">
+                  {wishlistCount}
+                </span>
+              </div>
+
+              <div id="menuButtonCart" className="flex items-center relative p-1 cursor-pointer">
+                <button aria-label="cart">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width={24}
+                    height={24}
+                    viewBox="0 0 56 56"
+                    className="hover:text-[#51acec] duration-150"
+                  >
+                    <path
+                      fill="currentColor"
+                      d="M20.008 39.649H47.36c.913 0 1.71-.75 1.71-1.758s-.797-1.758-1.71-1.758H20.406c-1.336 0-2.156-.938-2.367-2.367l-.375-2.461h29.742c3.422 0 5.18-2.11 5.672-5.461l1.875-12.399a7 7 0 0 0 .094-.89c0-1.125-.844-1.899-2.133-1.899H14.641l-.446-2.976c-.234-1.805-.89-2.72-3.28-2.72H2.687c-.937 0-1.734.822-1.734 1.76c0 .96.797 1.781 1.735 1.781h7.921l3.75 25.734c.493 3.328 2.25 5.414 5.649 5.414m31.054-25.454L49.4 25.422c-.188 1.453-.961 2.344-2.344 2.344l-29.906.023l-1.993-13.594ZM21.86 51.04a3.766 3.766 0 0 0 3.797-3.797a3.78 3.78 0 0 0-3.797-3.797c-2.132 0-3.82 1.688-3.82 3.797c0 2.133 1.688 3.797 3.82 3.797m21.914 0c2.133 0 3.82-1.664 3.82-3.797c0-2.11-1.687-3.797-3.82-3.797c-2.109 0-3.82 1.688-3.82 3.797c0 2.133 1.711 3.797 3.82 3.797"
+                    ></path>
+                  </svg>
+                </button>
+                <span className="select-none absolute font-semibold right-0 text-sm top-1 bg-red-500 rounded-full w-4 h-4 text-white flex justify-center items-center">
+                  {cartCount}
+                </span>
+              </div>
             </div>
           </div>
           {/* down side */}
           {/* search */}
-          <div className="flex mt-4 h-[40px] relative">
+          <div className="flex mt-2 h-[40px] relative">
             <input
               type="text"
               name="book"
@@ -771,92 +791,89 @@ export default function NavBarClient({books}) {
           id="navLinks"
           className="title-main hidden lg:flex lg:justify-between justify-center items-center font-medium lg:text-[14px] xl:text-base 2xl:text-base"
         >
-          <button
-            onClick={() => {
-              router.push("/");
-            }}
-            className={`${(pathname === "/en" && "bg-white text-black") ||
-              (pathname === "/bn" && "bg-white text-black")
-              } border-[1px]  hover:bg-[#51acec] hover:text-black duration-150 border-[#E4E4E4] bg-[#51acec]  w-full py-3`}
-          >
-            {t2("home")}
-          </button>
-
-          <a href={"/new-books"} className="w-full">
+    
+<Link href={`/`} className="w-full">
             <button
               className={`${lastPath === "new-books" && "bg-white text-black"
-                } border-[1px]  hover:bg-white hover:text-black duration-150 bg-[#51acec] border-[#E4E4E4] w-full py-3`}
+                } border-[1px]  hover:bg-white hover:text-black duration-150 bg-[#51acec] border-[#E4E4E4] w-full py-3 cursor-pointer`}
+            >
+              {t2("home")}
+            </button>
+          </Link>
+           <Link href={`/${locale}/new-books`} className="w-full">
+            <button
+              className={`${lastPath === "new-books" && "bg-white text-black"
+                } border-[1px]  hover:bg-white hover:text-black duration-150 bg-[#51acec] border-[#E4E4E4] w-full py-3 cursor-pointer`}
             >
               {t2("newbooks")}
             </button>
-          </a>
-          <a href={"/ittadi-books"} className="w-full">
+          </Link>
+          <Link href={`/${locale}/ittadi-books`} className="w-full">
             <button
               className={`${lastPath === "ittadi-books" && "bg-white text-black"
-                } border-[1px]  hover:bg-white hover:text-black duration-150 bg-[#51acec] border-[#E4E4E4] w-full py-3`}
+                } border-[1px]  hover:bg-white hover:text-black duration-150 bg-[#51acec] border-[#E4E4E4] w-full py-3 cursor-pointer`}
             >
               {t2("ittadiBooks")}
             </button>
-          </a>
-          <a href={"/bhumika-book"} className="w-full">
+          </Link>
+          <Link href={`/${locale}/bhumika-book`} className="w-full">
             <button
               className={`${lastPath === "bhumika-book" && "bg-white text-black"
-                } border-[1px]  hover:bg-white hover:text-black duration-150 bg-[#51acec] border-[#E4E4E4] w-full py-3`}
+                } border-[1px]  hover:bg-white hover:text-black duration-150 bg-[#51acec] border-[#E4E4E4] w-full py-3 cursor-pointer`}
             >
               {t2("bhumikabooks")}
             </button>
-          </a>
-          <a href={"/allbooks"} className="w-full">
+          </Link>
+          <Link href={`/${locale}/allbooks`} className="w-full">
             <button
               className={`${lastPath === "allbooks" && "bg-white text-black"
-                } border-[1px]  hover:bg-white hover:text-black duration-150 bg-[#51acec] border-[#E4E4E4] w-full py-3`}
+                } border-[1px]  hover:bg-white hover:text-black duration-150 bg-[#51acec] border-[#E4E4E4] w-full py-3 cursor-pointer`}
             >
               {t2("allbooks")}
             </button>
-          </a>
-          <a href={"/book-fair-2025"} className="w-full">
+          </Link>
+          <Link href={`/${locale}/book-fair-2025`} className="w-full">
             <button
               className={`${lastPath === "book-fair-2025" && "bg-white text-black"
-                } border-[1px]  hover:bg-white hover:text-black duration-150 bg-[#51acec] border-[#E4E4E4] w-full py-3`}
+                } border-[1px]  hover:bg-white hover:text-black duration-150 bg-[#51acec] border-[#E4E4E4] w-full py-3 cursor-pointer`}
             >
               {t2("bookFair")}
             </button>
-          </a>
-          <a href={"/authors"} className="w-full">
+          </Link>
+          <Link href={`/${locale}/authors`} className="w-full">
             <button
               className={`${lastPath === "authors" && "bg-white text-black"
-                } border-[1px]  hover:bg-white hover:text-black duration-150 bg-[#51acec] border-[#E4E4E4] w-full py-3`}
+                } border-[1px]  hover:bg-white hover:text-black duration-150 bg-[#51acec] border-[#E4E4E4] w-full py-3 cursor-pointer`}
             >
               {t2("author")}
             </button>
-          </a>
+          </Link>
 
           
-          
-          <a href={"/categories"} className="w-full">
+                    <Link href={`/${locale}/categories`} className="w-full">
             <button
               className={`${lastPath === "categories" && "bg-white text-black"
-                } border-[1px]  hover:bg-white hover:text-black duration-150 bg-[#51acec] border-[#E4E4E4] w-full py-3`}
+                } border-[1px]  hover:bg-white hover:text-black duration-150 bg-[#51acec] border-[#E4E4E4] w-full py-3 cursor-pointer`}
             >
               {t2("category")}
             </button>
-          </a>
-          <a href={"/blogs"} className="w-full">
+          </Link>
+          <Link href={`/${locale}/blogs`} className="w-full">
             <button
-              className={`${lastPath === "gallery" && "bg-white text-black"
-                } border-[1px]  hover:bg-white hover:text-black duration-150 bg-[#51acec] border-[#E4E4E4] w-full py-3`}
+              className={`${lastPath === "blogs" && "bg-white text-black"
+                } border-[1px]  hover:bg-white hover:text-black duration-150 bg-[#51acec] border-[#E4E4E4] w-full py-3 cursor-pointer`}
             >
               {t2("blog")}
             </button>
-          </a>
-          <a href={"/gallery"} className="w-full">
+          </Link>
+          <Link href={`/${locale}/gallery`} className="w-full">
             <button
               className={`${lastPath === "gallery" && "bg-white text-black"
-                } border-[1px]  hover:bg-white hover:text-black duration-150 bg-[#51acec] border-[#E4E4E4] w-full py-3`}
+                } border-[1px]  hover:bg-white hover:text-black duration-150 bg-[#51acec] border-[#E4E4E4] w-full py-3 cursor-pointer`}
             >
               {t2("gallery")}
             </button>
-          </a>
+          </Link>
           
         </div>
       </div>
@@ -960,109 +977,131 @@ export default function NavBarClient({books}) {
             id="navLinks"
             className="title-main flex justify-between flex-col items-center font-medium py-10"
           >
-            <button
+             <Link
+              href={`/${locale}`}
               onClick={() => {
-                window.location.replace("/");
+                const sideMenu = document.getElementById("sidemenu");
+                if(sideMenu) sideMenu.style.left = "-100%";
               }}
-              className="border-b-[1px]  hover:bg-[#51acec] text-start hover:text-white duration-150 border-[#E4E4E4]  w-full py-3"
+              className="border-b-[1px] hover:bg-[#51acec] text-start hover:text-white duration-150 border-[#E4E4E4] w-full py-3 cursor-pointer"
             >
               {t2("home")}
-            </button>
-            <button
+            </Link>
+            <Link
+              href={`/${locale}/user`}
               onClick={() => {
-                window.location.replace("/user");
+                const sideMenu = document.getElementById("sidemenu");
+                if(sideMenu) sideMenu.style.left = "-100%";
               }}
-              className="border-b-[1px]  hover:bg-[#51acec] text-start hover:text-white duration-150 border-[#E4E4E4]  w-full py-3"
+              className="border-b-[1px] hover:bg-[#51acec] text-start hover:text-white duration-150 border-[#E4E4E4] w-full py-3 cursor-pointer"
             >
               {t2("profile")}
-            </button>
+            </Link>
 
-            <button
+            <Link
+              href={`/${locale}/new-books`}
               onClick={() => {
-                window.location.replace("/new-books");
+                const sideMenu = document.getElementById("sidemenu");
+                if(sideMenu) sideMenu.style.left = "-100%";
               }}
-              className="border-b-[1px]  hover:bg-[#51acec] text-start hover:text-white duration-150 border-[#E4E4E4] w-full py-3"
+              className="border-b-[1px] hover:bg-[#51acec] text-start hover:text-white duration-150 border-[#E4E4E4] w-full py-3 cursor-pointer"
             >
               {t2("newbooks")}
-            </button>
-            <button
+            </Link>
+            <Link
+              href={`/${locale}/ittadi-books`}
               onClick={() => {
-                window.location.replace("/ittadi-books");
+                const sideMenu = document.getElementById("sidemenu");
+                if(sideMenu) sideMenu.style.left = "-100%";
               }}
-              className="border-b-[1px]  hover:bg-[#51acec] text-start hover:text-white duration-150 border-[#E4E4E4] w-full py-3"
+              className="border-b-[1px] hover:bg-[#51acec] text-start hover:text-white duration-150 border-[#E4E4E4] w-full py-3 cursor-pointer"
             >
               {t2("ittadiBooks")}
-            </button>
-            <button
+            </Link>
+            <Link
+              href={`/${locale}/bhumika-book`}
               onClick={() => {
-                window.location.replace("/bhumika-book");
+                const sideMenu = document.getElementById("sidemenu");
+                if(sideMenu) sideMenu.style.left = "-100%";
               }}
-              className="border-b-[1px]  hover:bg-[#51acec] text-start hover:text-white duration-150 border-[#E4E4E4] w-full py-3"
+              className="border-b-[1px] hover:bg-[#51acec] text-start hover:text-white duration-150 border-[#E4E4E4] w-full py-3 cursor-pointer"
             >
               {t2("bhumikabooks")}
-            </button>
-            <button
+            </Link>
+            <Link
+              href={`/${locale}/allbooks`}
               onClick={() => {
-                window.location.replace("/allbooks");
+                const sideMenu = document.getElementById("sidemenu");
+                if(sideMenu) sideMenu.style.left = "-100%";
               }}
-              className="border-b-[1px]  hover:bg-[#51acec] text-start hover:text-white duration-150 border-[#E4E4E4] w-full py-3"
+              className="border-b-[1px] hover:bg-[#51acec] text-start hover:text-white duration-150 border-[#E4E4E4] w-full py-3 cursor-pointer"
             >
               {t2("allbooks")}
-            </button>
-            <button
+            </Link>
+            <Link
+              href={`/${locale}/book-fair-2025`}
               onClick={() => {
-                window.location.replace("/book-fair-2025");
+                const sideMenu = document.getElementById("sidemenu");
+                if(sideMenu) sideMenu.style.left = "-100%";
               }}
-              className="border-b-[1px]  hover:bg-[#51acec] text-start hover:text-white duration-150 border-[#E4E4E4] w-full py-3"
+              className="border-b-[1px] hover:bg-[#51acec] text-start hover:text-white duration-150 border-[#E4E4E4] w-full py-3 cursor-pointer"
             >
               {t2("bookFair")}
-            </button>
+            </Link>
 
-            <button
+            <Link
+              href={`/${locale}/authors`}
               onClick={() => {
-                window.location.replace("/authors");
+                const sideMenu = document.getElementById("sidemenu");
+                if(sideMenu) sideMenu.style.left = "-100%";
               }}
-              className="border-b-[1px]  hover:bg-[#51acec] text-start hover:text-white duration-150 border-[#E4E4E4]  w-full py-3"
+              className="border-b-[1px] hover:bg-[#51acec] text-start hover:text-white duration-150 border-[#E4E4E4] w-full py-3 cursor-pointer"
             >
               {t2("author")}
-            </button>
-            <button
+            </Link>
+            <Link
+              href={`/${locale}/categories`}
               onClick={() => {
-                window.location.replace("/categories");
+                const sideMenu = document.getElementById("sidemenu");
+                if(sideMenu) sideMenu.style.left = "-100%";
               }}
-              className="border-b-[1px]  hover:bg-[#51acec] text-start hover:text-white duration-150 border-[#E4E4E4]  w-full py-3"
+              className="border-b-[1px] hover:bg-[#51acec] text-start hover:text-white duration-150 border-[#E4E4E4] w-full py-3 cursor-pointer"
             >
               {t2("category")}
-            </button>
-            <button
+            </Link>
+            <Link
+              href={`/${locale}/blogs`}
               onClick={() => {
-                window.location.replace("/blogs");
+                const sideMenu = document.getElementById("sidemenu");
+                if(sideMenu) sideMenu.style.left = "-100%";
               }}
-              className="border-b-[1px]  hover:bg-[#51acec] text-start hover:text-white duration-150 border-[#E4E4E4]  w-full py-3"
+              className="border-b-[1px] hover:bg-[#51acec] text-start hover:text-white duration-150 border-[#E4E4E4] w-full py-3 cursor-pointer"
             >
               {t2("blog")}
-            </button>
-            <button
+            </Link>
+            <Link
+              href={`/${locale}/gallery`}
               onClick={() => {
-                window.location.replace("/gallery");
+                const sideMenu = document.getElementById("sidemenu");
+                if(sideMenu) sideMenu.style.left = "-100%";
               }}
-              className="border-b-[1px]  hover:bg-[#51acec] text-start hover:text-white duration-150 border-[#E4E4E4]  w-full py-3"
+              className="border-b-[1px] hover:bg-[#51acec] text-start hover:text-white duration-150 border-[#E4E4E4] w-full py-3 cursor-pointer"
             >
               {t2("gallery")}
-            </button>
+            </Link>
 
             {/* cart button */}
-            <div
-              onClick={() => window.location.replace("/cart")}
-              className="border-b-[1px]  hover:bg-[#51acec] text-start hover:text-white duration-150 border-[#E4E4E4] flex gap-2 items-center justify-between w-full py-3"
+             <Link
+              href={`/${locale}/cart`}
+              onClick={() => {
+                const sideMenu = document.getElementById("sidemenu");
+                if(sideMenu) sideMenu.style.left = "-100%";
+              }}
+              className="border-b-[1px] hover:bg-[#51acec] text-start hover:text-white duration-150 border-[#E4E4E4] flex gap-2 items-center justify-between w-full py-3 cursor-pointer"
             >
               {t2("cart")}
-              <div
-                onClick={() => router.push("/cart")}
-                className="relative flex items-center p-1"
-              >
-                <button aria-label="cart">
-                  {" "}
+              <div className="relative flex items-center p-1">
+                <button aria-label="cart" className="cursor-pointer">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width={24}
@@ -1076,29 +1115,23 @@ export default function NavBarClient({books}) {
                     ></path>
                   </svg>
                 </button>
-                <span className=" absolute  font-semibold right-0 text-sm top-1 bg-red-500 rounded-full w-4 h-4 text-white flex justify-center items-center">
+                <span className="absolute font-semibold right-0 text-sm top-1 bg-red-500 rounded-full w-4 h-4 text-white flex justify-center items-center">
                   {cartCount}
                 </span>
               </div>
-              
-            </div>
+            </Link>
             {/* wishlist button */}
-            <div
-              onClick={() => window.location.replace("/user/wishlist")}
-              className="border-b-[1px]  hover:bg-[#51acec] text-start hover:text-white duration-150 border-[#E4E4E4] flex gap-2 items-center justify-between w-full py-3"
+             <Link
+              href={`/${locale}/user/wishlist`}
+              onClick={() => {
+                const sideMenu = document.getElementById("sidemenu");
+                if(sideMenu) sideMenu.style.left = "-100%";
+              }}
+              className="border-b-[1px] hover:bg-[#51acec] text-start hover:text-white duration-150 border-[#E4E4E4] flex gap-2 items-center justify-between w-full py-3 cursor-pointer"
             >
               {t2("wishlist")}
-              <div
-                onClick={() => {
-                  router.push("/user/wishlist");
-                }}
-                className="relative flex items-center p-1"
-              >
-                <button
-                  onClick={() => router.push("/user/wishlist")}
-                  aria-label="wishlst"
-                >
-                  {" "}
+              <div className="relative flex items-center p-1">
+                <button aria-label="wishlist" className="cursor-pointer">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width={28}
@@ -1112,12 +1145,11 @@ export default function NavBarClient({books}) {
                     ></path>
                   </svg>
                 </button>
-                <span className=" absolute  font-semibold right-0 text-sm top-1 bg-red-500 rounded-full w-4 h-4 text-white flex justify-center items-center">
+                <span className="absolute font-semibold right-0 text-sm top-1 bg-red-500 rounded-full w-4 h-4 text-white flex justify-center items-center">
                   {wishlistCount}
                 </span>
               </div>
-              
-            </div>
+            </Link>
           </div>
           {/* last section */}
           {/* login */}
@@ -1179,10 +1211,10 @@ export default function NavBarClient({books}) {
             </div>
             <LocaleSwitcher />
             {/* login */}
-            {session.data?.user ? (
+             {session.data?.user ? (
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-2 p-2 w-full text-center justify-center font-medium text-red-600 hover:underline pt-2 mb-3"
+                className="flex items-center gap-2 p-2 w-full text-center justify-center font-medium text-red-600 hover:underline pt-2 mb-3 cursor-pointer"
               >
                 {/* Logout Icon */}
                 <svg
@@ -1200,23 +1232,19 @@ export default function NavBarClient({books}) {
               </button>
             ) : (
               <div className="flex items-center gap-3 w-full justify-center mb-3">
-                <button
-                  onClick={() => {
-                    window.location.replace("/login");
-                  }}
-                  className="text-[#51acec] font-semibold "
+                <Link
+                  href={`/${locale}/login`}
+                  className="text-[#51acec] font-semibold cursor-pointer"
                 >
                   {t("login")}
-                </button>
+                </Link>
 
-                <button
-                  onClick={() => {
-                    window.location.replace("/signup");
-                  }}
-                  className="bg-[#51acec] text-white px-3 py-1 rounded-lg duration-150"
+                <Link
+                  href={`/${locale}/signup`}
+                  className="bg-[#51acec] text-white px-3 py-1 rounded-lg duration-150 cursor-pointer"
                 >
                   {t("register")}
-                </button>
+                </Link>
               </div>
             )}
           </div>
@@ -1302,15 +1330,17 @@ export default function NavBarClient({books}) {
             </div>
 
             {/* Sticky Checkout Button */}
-            <div className="p-4  ">
-              <button
+            <div className="p-4">
+              <Link
+                href={`/${locale}/cart`}
                 onClick={() => {
-                  window.location.replace("/cart");
+                  const sideMenuCart = document.getElementById("sidemenuCart");
+                  if(sideMenuCart) sideMenuCart.style.right = "-100%";
                 }}
-                className="bg-[#51acec] w-full p-3 rounded-lg text-white font-medium"
+                className="bg-[#51acec] block text-center w-full p-3 rounded-lg text-white font-medium cursor-pointer"
               >
                 {t5("purchaseNow")}
-              </button>
+              </Link>
             </div>
           </div>
         </div>

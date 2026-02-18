@@ -21,31 +21,30 @@ export default function SwiperForBooks({ books }) {
                     breakpoints={{
                         320: { // mobile
                             slidesPerView: 2,
-                            spaceBetween: 10,
+                            spaceBetween: 8,
                         },
                         375: { // mobile
                             slidesPerView: 2,
-                            spaceBetween: 10,
+                            spaceBetween: 8,
                         },
                         640: { // small devices
                             slidesPerView: 2,
-                            spaceBetween: 15,
+                            spaceBetween: 10,
                         },
                         768: { // tablets
                             slidesPerView: 3,
-                            spaceBetween: 20,
+                            spaceBetween: 15,
                         },
                         1024: { // laptops
                             slidesPerView: 4,
-                            spaceBetween: 25,
+                            spaceBetween: 20,
                         },
                         1280: { // desktops
                             slidesPerView: 5,
-                            spaceBetween: 30,
+                            spaceBetween: 25,
                         },
                     }}
                     navigation={true}
-                    spaceBetween={30}
                     pagination={{
                         clickable: true,
                     }}

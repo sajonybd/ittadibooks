@@ -22,8 +22,8 @@ export default function BlogsPage() {
     fetchBlogs();
   }, []);
 
-  if (loading) return <p className="text-center mt-10">Loading blogs...</p>;
-  if (!blogs.length) return <p className="text-center mt-10">No blogs available.</p>;
+  if (loading) return <p className="text-center mt-2">Loading blogs...</p>;
+  if (!blogs.length) return <p className="text-center mt-2">No blogs available.</p>;
 
   return (
     <div className=" lg:px-4 py-8">

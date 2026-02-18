@@ -36,12 +36,12 @@ export async function GET(req) {
 
     
 
-   const books = await db
-  .collection("books")
-  .find({
-    "categories.category": "ই-কমার্স"
-  })
-  .toArray();
+    const books = await db
+      .collection("books")
+      .find({
+        "categories.category": bnName
+      })
+      .toArray();
  
 
 

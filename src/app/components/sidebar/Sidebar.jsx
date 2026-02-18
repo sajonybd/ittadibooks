@@ -231,13 +231,13 @@ export default function BrowseSidebar({
       {/* Mobile */}
       
       {/* Mobile */}
-      <div className="lg:hidden md:block mt-5 w-full mb-5">
-        <button
+      <div className="lg:hidden md:block w-full">
+        {/* <button
           onClick={() => setFilterOpen(true)}
           className="bg-[#51acec] text-white px-4 py-2 rounded-lg w-full"
         >
           Filter / Sort
-        </button>
+        </button> */}
         <MobileSidebar filterOpen={filterOpen} setFilterOpen={setFilterOpen}>
           {SidebarBody}
         </MobileSidebar>
