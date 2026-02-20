@@ -10,7 +10,7 @@ const adminRoutes = ["/admin"]; // Only admins
 
 const intlMiddleware = createMiddleware(routing);
 
-export default async function middleware(request) {
+export default async function proxy(request) {
   const response = intlMiddleware(request);
   const { pathname, origin, search } = request.nextUrl;
   const protectedApiRoutes = ["/api/cart"];

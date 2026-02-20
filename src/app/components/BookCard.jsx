@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
+import CloudinaryImage from "@/app/components/CloudinaryImage";
 import axios from "axios";
 
 export default function BookCard({ book }) {
@@ -170,7 +171,7 @@ export default function BookCard({ book }) {
 
       {/* Book Image */}
       <div className="relative h-48 w-full overflow-hidden rounded-t-xl bg-white flex items-center justify-center p-2">
-      <Image
+      <CloudinaryImage
         priority
         width={300}
         height={300}

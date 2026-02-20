@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
+import CloudinaryImage from "@/app/components/CloudinaryImage";
 import RatingCom from "@/app/components/Rating";
 import BookCard from "@/app/components/BookCard";
 import { useLocale, useTranslations } from "next-intl";
@@ -330,7 +331,7 @@ export default function BookDetailPage() {
                 onMouseLeave={() => setIsHovering(false)}
                 className="w-full shrink-0 overflow-hidden rounded-lg shadow-md"
               >
-                <Image
+                <CloudinaryImage
                   src={book.cover?.url}
                   alt={book.title?.bn || book.title?.en}
                   width={260}
