@@ -78,6 +78,7 @@ export default function BookCard({ book }) {
     }
 
     window.dispatchEvent(new Event("cartUpdated"));
+    window.dispatchEvent(new Event("openCart"));
     setInCart(true);
   };
 
@@ -197,18 +198,27 @@ export default function BookCard({ book }) {
         {/* Authors */}
         {book?.authors && book.authors.length > 0 && (
           <div className="mt-1 flex flex-wrap gap-1">
-            {book.authors.slice(0, 1).map((author, idx) => (
-              <p
-                key={author.uid || idx}
-                onClick={() => {
-                  const nameBeforeSlash = author.name.split("/")[0].trim();
-                  router.push(`/${locale}/authors/${encodeURIComponent(nameBeforeSlash)}`);
-                }}
-                className="cursor-pointer text-[10px] lg:text-xs font-medium text-gray-500 hover:text-[#51acec] line-clamp-1"
-              >
-                {author.name.split("/")[0].trim()}
-              </p>
-            ))}
+            {book.authors.slice(0, 1).map((author, idx) => {
+              const names = author.name.includes("/")
+                ? author.name.split("/").map((part) => part.trim())
+                : [author.name.trim()];
+              
+              const banglaName = names[0];
+              const englishName = names[1] || banglaName;
+              const displayInfo = locale === "en" ? englishName : banglaName;
+
+              return (
+                <p
+                  key={author.uid || idx}
+                  onClick={() => {
+                    router.push(`/${locale}/authors/${encodeURIComponent(banglaName)}`);
+                  }}
+                  className="cursor-pointer text-[10px] lg:text-xs font-medium text-gray-500 hover:text-[#51acec] line-clamp-1"
+                >
+                  {displayInfo}
+                </p>
+              );
+            })}
           </div>
         )}
         </div>

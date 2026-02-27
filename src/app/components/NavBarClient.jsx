@@ -198,9 +198,16 @@ export default function NavBarClient({books}) {
     // Listen for "cartUpdated" from BookCard
     window.addEventListener("cartUpdated", handleCartUpdate);
 
+    // Listen for "openCart" to open side drawer
+    const handleOpenCart = () => {
+      setIsCartOpen(true);
+    };
+    window.addEventListener("openCart", handleOpenCart);
+
     // Cleanup
     return () => {
       window.removeEventListener("cartUpdated", handleCartUpdate);
+      window.removeEventListener("openCart", handleOpenCart);
     };
   }, []);
 

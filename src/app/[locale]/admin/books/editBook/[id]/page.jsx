@@ -213,7 +213,7 @@ export default function EditBookPage() {
         setDescription(book.description?.en || "");
         setDescriptionBn(book.description?.bn || "");
         setExistingCover(book.cover?.url || "");
-        setExistingBookPdf(book?.pdf.url || "")
+        setExistingBookPdf(book?.pdf?.url || "");
       } catch (err) {
         toast.error("Failed to load book data");
         // // console.error(err);
@@ -946,41 +946,35 @@ export default function EditBookPage() {
             <div>
               <label className="block mb-1 font-medium">Book Pdf</label>
 
-              {/* If existing cover or newly selected image exists, show preview with remove button */}
-              {/* {existingBookPdf || bookPdf ? (
-                <div className="mb-2 relative w-32 h-32">
-                  <img
-                    src={
-                      coverImage
-                        ? URL.createObjectURL(bookPdf)
-                        : existingBookPdf
-                    }
-                    alt="cover"
-                    className="w-32 h-32 object-contain border p-2 rounded"
-                  />
+              {existingBookPdf || bookPdf ? (
+                <div className="mb-2 relative w-32 h-32 flex items-center justify-center border p-2 rounded">
+                  <a
+                    href={bookPdf ? URL.createObjectURL(bookPdf) : existingBookPdf}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 underline text-sm text-center"
+                  >
+                    View PDF
+                  </a>
                   <button
                     type="button"
                     className="absolute top-0 right-0 bg-red-600 text-white px-2 rounded"
                     onClick={() => {
                       setBookPdf(null);
                       setExistingBookPdf(null);
-                      if (fileInputRef.current) {
-                        fileInputRef.current.value = ""; // clears the input
-                      }
                     }}
                   >
                     ✕
                   </button>
                 </div>
               ) : (
-                <p className="text-gray-500 text-sm mb-2">No cover selected</p>
-              )} */}
+                <p className="text-gray-500 text-sm mb-2">No PDF selected</p>
+              )}
 
               {/* File input */}
               <input
                 type="file"
-                ref={fileInputRef}
-                accept="image/*"
+                accept="application/pdf"
                 onChange={(e) => setBookPdf(e.target.files[0])}
                 className="border p-2 rounded w-full"
               />

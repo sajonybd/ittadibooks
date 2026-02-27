@@ -88,11 +88,39 @@ export async function POST(req) {
       coverPublicId = result.public_id;
       await unlink(tmpPath);
     } catch (err) {
-      // // console.error("Cover upload failed:", err);
+      console.error("Cover upload failed:", err);
       return NextResponse.json(
-        { error: "Failed to upload cover image" },
+        { error: "Failed to upload cover image" + (err.message ? ": " + err.message : "") },
         { status: 500 }
       );
+    }
+
+    // PDF upload (optional)
+    let pdfUrl = "", pdfPublicId = "";
+    const pdfFile = formData.get("bookPdf");
+    if (pdfFile && pdfFile.arrayBuffer && pdfFile.size > 0) {
+      try {
+        const buffer = Buffer.from(await pdfFile.arrayBuffer());
+        const filename = `${randomUUID()}-${pdfFile.name}`;
+        const tmpPath = path.join(os.tmpdir(), filename);
+        await writeFile(tmpPath, buffer);
+
+        const result = await cloudinary.uploader.upload(tmpPath, {
+          folder: "books/pdf",
+          resource_type: "raw",          // PDF is a raw file
+          access_mode: "public"
+        });
+
+        pdfUrl = result.secure_url;
+        pdfPublicId = result.public_id;
+        await unlink(tmpPath);
+      } catch (err) {
+        console.error("PDF upload failed:", err);
+        return NextResponse.json(
+          { error: "Failed to upload PDF file" + (err.message ? ": " + err.message : "") },
+          { status: 500 }
+        );
+      }
     }
 
     // PagesImages & totalPages
@@ -129,6 +157,7 @@ export async function POST(req) {
       orderType,
       availability,
       cover: { url: coverUrl, publicId: coverPublicId }, // guaranteed not empty
+      ...(pdfUrl && { pdf: { url: pdfUrl, publicId: pdfPublicId } }), // add pdf if uploaded
       pagesImages,
       createdAt: new Date(),
     };

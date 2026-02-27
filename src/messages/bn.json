@@ -89,6 +89,7 @@
   "bookCard": {
     "addToCart": "কার্টে যোগ করুন",
     "removeFromCart": "কার্ট থেকে সরান",
+    "remove": "সরান",
     "addToWishlist": "পছন্দে যোগ করুন",
     "removeFromWishlist": "পছন্দ থেকে সরান",
     "buyNow": "এখনই কিনুন",

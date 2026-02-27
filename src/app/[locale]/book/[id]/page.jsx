@@ -218,6 +218,7 @@ export default function BookDetailPage() {
 
     // Trigger update & state
     window.dispatchEvent(new Event("cartUpdated"));
+    window.dispatchEvent(new Event("openCart"));
     setInCart(true);
 
   };
@@ -361,7 +362,6 @@ export default function BookDetailPage() {
 
 
               {/* Author */}
-              {/* Author */}
               {book?.authors?.length > 0 &&
                 book.authors.some((a) => a.name?.trim() !== "") && (
                   <p className="text-lg text-gray-700">
@@ -371,18 +371,20 @@ export default function BookDetailPage() {
                         ? a.name.split("/").map((part) => part.trim())
                         : [a.name.trim(), ""];
 
+                      const displayInfo = locale === "en" ? (englishName || banglaName) : banglaName;
+
                       return (
                         <span key={i}>
                           <span
                             onClick={() => {
                               if (banglaName)
                                 router.push(
-                                  `/authors/${encodeURIComponent(banglaName)}`
+                                  `/${locale}/authors/${encodeURIComponent(banglaName)}`
                                 );
                             }}
                             className="cursor-pointer hover:text-[#51acec] hover:underline"
                           >
-                            {banglaName}
+                            {displayInfo}
                           </span>
                           {/* {englishName && ` / ${englishName}`} */}
                           {i < book.authors.length - 1 && ", "}
@@ -403,6 +405,8 @@ export default function BookDetailPage() {
                         : [tr.name.trim()];
 
                       const banglaName = names[0];
+                      const englishName = names[1] || banglaName;
+                      const displayInfo = locale === "en" ? englishName : banglaName;
 
                       return (
                         <span key={i}>
@@ -410,12 +414,12 @@ export default function BookDetailPage() {
                             onClick={() => {
                               if (banglaName)
                                 router.push(
-                                  `/authors/${encodeURIComponent(banglaName)}`
+                                  `/${locale}/authors/${encodeURIComponent(banglaName)}`
                                 );
                             }}
                             className="cursor-pointer hover:text-[#51acec] hover:underline"
                           >
-                            {banglaName}
+                            {displayInfo}
                           </span>
                           {i < book.translators.length - 1 && ", "}
                         </span>
@@ -435,6 +439,8 @@ export default function BookDetailPage() {
                         : [ed.name.trim()];
 
                       const banglaName = names[0];
+                      const englishName = names[1] || banglaName;
+                      const displayInfo = locale === "en" ? englishName : banglaName;
 
                       return (
                         <span key={i}>
@@ -442,12 +448,12 @@ export default function BookDetailPage() {
                             onClick={() => {
                               if (banglaName)
                                 router.push(
-                                  `/authors/${encodeURIComponent(banglaName)}`
+                                  `/${locale}/authors/${encodeURIComponent(banglaName)}`
                                 );
                             }}
                             className="cursor-pointer hover:text-[#51acec] hover:underline"
                           >
-                            {banglaName}
+                            {displayInfo}
                           </span>
                           {i < book.editors.length - 1 && ", "}
                         </span>

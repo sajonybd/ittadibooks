@@ -62,6 +62,7 @@ export default function AddBookPage() {
   const [description, setDescription] = useState("");
   const [descriptionBn, setDescriptionBn] = useState("");
   const [coverImage, setCoverImage] = useState(null);
+  const [bookPdf, setBookPdf] = useState(null);
   const [availability, setAvailability] = useState("");
 
   useEffect(() => {
@@ -163,6 +164,7 @@ export default function AddBookPage() {
       formData.append("description", description);
       formData.append("descriptionBn", descriptionBn);
       formData.append("coverImage", coverImage);
+      if (bookPdf) formData.append("bookPdf", bookPdf);
       
       collections.forEach((c) =>
         formData.append("collections[]", JSON.stringify(c))
@@ -785,6 +787,35 @@ export default function AddBookPage() {
               />
             </div>
 
+            {/* Book PDF */}
+            <div>
+              <label className="block mb-1 font-medium">Book PDF</label>
+
+              {bookPdf ? (
+                <div className="mb-2 relative w-32 h-32 flex items-center justify-center border p-2 rounded">
+                  <span className="text-sm text-gray-700">PDF Selected</span>
+                  <button
+                    type="button"
+                    className="absolute top-0 right-0 bg-red-600 text-white px-2 rounded"
+                    onClick={() => {
+                      setBookPdf(null);
+                      // You might want a separate ref for the PDF input if you need to clear it specifically
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ) : (
+                <p className="text-gray-500 text-sm mb-2">No PDF selected</p>
+              )}
+
+              <input
+                type="file"
+                accept="application/pdf"
+                onChange={(e) => setBookPdf(e.target.files[0])}
+                className="border p-2 rounded w-full"
+              />
+            </div>
              
 
             <button

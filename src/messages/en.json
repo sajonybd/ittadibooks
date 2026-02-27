@@ -90,6 +90,7 @@
   "bookCard": {
     "addToCart": "Add to Cart",
     "removeFromCart": "Remove from Cart",
+    "remove": "Remove",
     "removeFromWishlist": "Remove from Wishlist",
     "addToWishlist": "Add to Wishlist",
     "buyNow": "Buy Now",

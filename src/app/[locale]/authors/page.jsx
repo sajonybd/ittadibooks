@@ -169,8 +169,7 @@ export default function AuthorsPage() {
                   className="w-32 h-32 rounded-full object-cover mx-auto mb-4"
                 />
                 <h3 className="lg:text-xl text-sm font-semibold">
-                  {/* {locale === "en" ? author.nameEn || author.name : author.name} */}
-                  {author.nameBn}
+                  {locale === "en" ? (author.name || author.nameBn) : (author.nameBn || author.name)}
                 </h3>
                 <p className="text-gray-500 text-sm mt-1 mb-4 line-clamp-1 font-semibold">
                   {locale === "en" ? author.description : author.descriptionBn}
