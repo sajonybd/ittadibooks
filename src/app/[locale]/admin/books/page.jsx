@@ -3,32 +3,30 @@
 "use client";
 import axios from "axios";
 import Image from "next/image";
-import { useParams, useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback } from "react";
 import Select from "react-select"; // added react-select
-
-const collections = [
-  { id: "bookfair2025", label: "Book Fair 2025" },
-  { id: "ittadiBooks", label: "Ittadi Books" },
-  { id: "bhumikaBooks", label: "Bhumika Books" },
-  { id: "awardWinners", label: "Award Winning Books" },
-  { id: "newArrivals", label: "New Arrivals" },
-  { id: "bestSellers", label: "Best Sellers" },
-  { id: "editorChoice", label: "Editor’s Choice" },
-  { id: "mustReads", label: "Must Reads" },
-];
+import toast from "react-hot-toast";
+import Pagination from "@/app/components/Pagination";
 
 export default function AdminBooksPage() {
+  const BOOKS_PER_PAGE = 20;
   const router = useRouter();
   const [books, setBooks] = useState([]);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sortField, setSortField] = useState("title.bn");
   const [sortAsc, setSortAsc] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [selectedBook, setSelectedBook] = useState(null);
   const [selectedBooks, setSelectedBooks] = useState([]); // for bulk select
   const [bulkDiscount, setBulkDiscount] = useState(""); // discount input
-  const { locale } = useParams();
   const [selectedCollection, setSelectedCollection] = useState(null);
+  const [authors, setAuthors] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [collectionsOptions, setCollectionsOptions] = useState([]);
 
   // filter states
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -36,124 +34,88 @@ export default function AdminBooksPage() {
 
   // pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const booksPerPage = books.length;
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
+    const loadFilterOptions = async () => {
+      try {
+        const { data } = await axios.get("/api/admin/books/filters");
+        setAuthors(data?.authors || []);
+        setCategories(data?.categories || []);
+        setCollectionsOptions(data?.collections || []);
+      } catch (error) {
+        setAuthors([]);
+        setCategories([]);
+        setCollectionsOptions([]);
+      }
+    };
+
+    loadFilterOptions();
+  }, []);
+
+  const fetchBooks = useCallback(
+    async (pageToLoad = currentPage) => {
+      setIsLoading(true);
+      try {
+        const { data } = await axios.get("/api/admin/books/getAllBook", {
+          params: {
+            page: pageToLoad,
+            limit: BOOKS_PER_PAGE,
+            search: debouncedSearch,
+            sortField,
+            sortOrder: sortAsc ? "asc" : "desc",
+            category: selectedCategory?.value || "",
+            author: selectedAuthor?.value || "",
+            collection: selectedCollection?.value || "",
+          },
+        });
+
+        const fetchedBooks = data?.books || [];
+        const pagination = data?.pagination || {};
+
+        setBooks(fetchedBooks);
+        setTotalItems(pagination.total || 0);
+        setTotalPages(pagination.totalPages || 0);
+
+        if ((pagination.totalPages || 0) > 0 && pageToLoad > pagination.totalPages) {
+          setCurrentPage(pagination.totalPages);
+        }
+      } catch (error) {
+        setBooks([]);
+        setTotalItems(0);
+        setTotalPages(0);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [
+      BOOKS_PER_PAGE,
+      currentPage,
+      debouncedSearch,
+      sortField,
+      sortAsc,
+      selectedCategory,
+      selectedAuthor,
+      selectedCollection,
+    ]
+  );
+
+  useEffect(() => {
+    fetchBooks();
+    setSelectedBooks([]);
+  }, [fetchBooks]);
 
   // helper
   const getValue = (obj, path) =>
     path.split(".").reduce((acc, part) => acc?.[part], obj) || "";
 
-  
-  useEffect(() => {
-    const getBooks = async () => {
-      const data = await axios.get(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/books/getAllBook`
-      );
-      const fetchedBooks = data?.data?.books || [];
-
-      // flatten arrays for easier sort/filter
-      const normalizedBooks = fetchedBooks.map((b) => ({
-        ...b,
-        authorBn: b.authors?.[0]?.name || "", // take first author
-        category: b.categories?.[0]?.category || "", // take first category
-      }));
-
-      const sortedBooks = [...normalizedBooks].sort((a, b) =>
-        getValue(a, "title.bn").localeCompare(getValue(b, "title.bn"), "bn")
-      );
-
-      setBooks(sortedBooks);
-    };
-
-    getBooks();
-  }, []);
-
- 
-  const authors = [
-    ...new Set(
-      books.flatMap(
-        (b) => b.authors?.map((a) => a.name?.trim().replace(/\/$/, "")) || []
-      )
-    ),
-  ].map((a) => ({ value: a, label: a }));
-
-  // Categories
-  const categories = [
-    ...new Set(
-      books.flatMap((b) => b.categories?.map((c) => c.category) || [])
-    ),
-  ].map((c) => ({ value: c, label: c }));
-
-  // Collections (DB already stores {value,label})
-  const collectionsOptions = [
-    ...new Set(
-      books.flatMap((b) => b.collections?.map((col) => col.value) || [])
-    ),
-  ].map((val) => {
-    const label = books
-      .flatMap((b) => b.collections || [])
-      .find((col) => col.value === val)?.label;
-    return { value: val, label };
-  });
-
-  const filteredBooks = books.filter((book) => {
-    const s = search.toLowerCase();
-    const matchesSearch =
-      getValue(book, "title.bn").toLowerCase().includes(s) ||
-      getValue(book, "authorBn")?.toLowerCase().includes(s);
-
-    
-    const matchesCategory = selectedCategory
-      ? book.categories?.some((c) => c.category === selectedCategory.value)
-      : true;
-
-    const matchesAuthor = selectedAuthor
-      ? book.authors?.some((a) => a.name === selectedAuthor.value)
-      : true;
-
-    
-
-    const matchesCollection = selectedCollection
-      ? book.collections?.some((c) => c.value === selectedCollection.value)
-      : true;
-
-    return (
-      matchesSearch && matchesCategory && matchesAuthor && matchesCollection
-    );
-  });
-
-  // 🔹 Sorting
-  const sortedBooks = [...filteredBooks].sort((a, b) => {
-    if (!sortField) return 0;
-    // Special case → sort by cover existence
-    if (sortField === "cover") {
-      const aHasCover = a?.cover?.url ? 1 : 0;
-      const bHasCover = b?.cover?.url ? 1 : 0;
-      return sortAsc ? aHasCover - bHasCover : bHasCover - aHasCover;
-    }
-    let aVal = getValue(a, sortField);
-    let bVal = getValue(b, sortField);
-
-    if (sortField === "discountedPrice") {
-      aVal = Number(aVal);
-      bVal = Number(bVal);
-      return sortAsc ? aVal - bVal : bVal - aVal;
-    }
-
-    if (typeof aVal === "string") {
-      return sortAsc
-        ? aVal.localeCompare(bVal, "bn")
-        : bVal.localeCompare(aVal, "bn");
-    }
-
-    return 0;
-  });
-
-  // pagination
-  const indexOfLastBook = currentPage * booksPerPage;
-  const indexOfFirstBook = indexOfLastBook - booksPerPage;
-  const currentBooks = sortedBooks.slice(indexOfFirstBook, indexOfLastBook);
-
-  const totalPages = Math.ceil(sortedBooks.length / booksPerPage);
+  const currentBooks = books;
 
   const goToPage = (page) => {
     if (page < 1 || page > totalPages) return;
@@ -167,6 +129,7 @@ export default function AdminBooksPage() {
       setSortField(field);
       setSortAsc(true);
     }
+    setCurrentPage(1);
   };
 
   // 🔹 Select All
@@ -186,7 +149,10 @@ export default function AdminBooksPage() {
 
   // 🔹 Bulk Discount Apply
   const applyBulkDiscount = async () => {
-    if (!bulkDiscount) return alert("Enter discount percentage!");
+    if (!bulkDiscount) {
+      toast.error("Enter discount percentage!");
+      return;
+    }
 
     try {
       await axios.post(
@@ -194,18 +160,13 @@ export default function AdminBooksPage() {
         { ids: selectedBooks, discount: bulkDiscount }
       );
 
-      alert("Discount applied successfully!");
+      toast.success("Discount applied successfully!");
       setBulkDiscount("");
       setSelectedBooks([]);
-
-      // refresh
-      const data = await axios.get(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/books/getAllBook`
-      );
-      setBooks(data?.data?.books || []);
+      await fetchBooks();
     } catch (error) {
       // // console.error(error);
-      alert("Failed to apply discount");
+      toast.error("Failed to apply discount");
     }
   };
 
@@ -220,8 +181,7 @@ export default function AdminBooksPage() {
       );
 
       if (res.data.success) {
-        // Remove the book from state after successful deletion
-        setBooks((prev) => prev.filter((b) => b._id !== id));
+        await fetchBooks();
         setSelectedBook(null);
         toast.success("Book deleted successfully");
       } else {
@@ -235,7 +195,7 @@ export default function AdminBooksPage() {
 
   async function handleRefresh() {
     await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/reloadBooks`, { method: "POST" });
-    alert("Books cache refreshed!");
+    toast.success("Books cache refreshed!");
   }
 
   return (
@@ -243,7 +203,7 @@ export default function AdminBooksPage() {
      <div className="flex justify-between mb-5">
        <h2 className="text-2xl lg:text-3xl font-bold mb-4 text-gray-800">
         Manage Books{" "}
-        <span className="text-lg">(Total Books : {books.length})</span>
+        <span className="text-lg">(Total Books : {totalItems})</span>
       </h2>
       <button onClick={handleRefresh} className="bg-green-400 px-3 rounded-md py-1">Refresh Books</button>
      </div>
@@ -364,9 +324,15 @@ export default function AdminBooksPage() {
             </tr>
           </thead>
           <tbody>
-            {currentBooks.length === 0 ? (
+            {isLoading ? (
               <tr>
-                <td colSpan="6" className="text-center py-4 text-gray-500">
+                <td colSpan="7" className="text-center py-4 text-gray-500">
+                  Loading books...
+                </td>
+              </tr>
+            ) : currentBooks.length === 0 ? (
+              <tr>
+                <td colSpan="7" className="text-center py-4 text-gray-500">
                   No books found.
                 </td>
               </tr>
@@ -422,7 +388,7 @@ export default function AdminBooksPage() {
                   <td className="px-4 py-2 text-center space-x-3">
                     <button
                       onClick={() => setSelectedBook(book)}
-                      className="text-blue-600 hover:underline"
+                      className="text-blue-600 hover:underline cursor-pointer"
                     >
                       View
                     </button>
@@ -430,13 +396,13 @@ export default function AdminBooksPage() {
                       onClick={() =>
                         router.push(`/admin/books/editBook/${book?._id}`)
                       }
-                      className="text-blue-600 hover:underline"
+                      className="text-blue-600 hover:underline cursor-pointer"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(book._id)}
-                      className="text-red-600 hover:underline"
+                      className="text-red-600 hover:underline cursor-pointer"
                     >
                       Delete
                     </button>
@@ -447,38 +413,14 @@ export default function AdminBooksPage() {
           </tbody>
         </table>
       </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-2 mt-4">
-          <button
-            onClick={() => goToPage(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="px-3 py-1 border rounded disabled:opacity-50"
-          >
-            Prev
-          </button>
-          {[...Array(totalPages)].map((_, i) => (
-            <button
-              key={i}
-              onClick={() => goToPage(i + 1)}
-              className={`px-3 py-1 border rounded ${currentPage === i + 1
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 text-gray-700"
-                }`}
-            >
-              {i + 1}
-            </button>
-          ))}
-          <button
-            onClick={() => goToPage(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="px-3 py-1 border rounded disabled:opacity-50"
-          >
-            Next
-          </button>
-        </div>
-      )}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={goToPage}
+        totalItems={totalItems}
+        pageSize={BOOKS_PER_PAGE}
+        siblingCount={2}
+      />
 
       {/* Modal */}
       {selectedBook && (
@@ -499,22 +441,47 @@ export default function AdminBooksPage() {
                 alt={getValue(selectedBook, "title.bn")}
                 className="w-32 h-44 object-cover rounded"
               />
-              <div>
+              <div className="space-y-1 text-sm">
+                <p>
+                  <strong>Publisher:</strong> {selectedBook.publisher || "N/A"}
+                </p>
                 <p>
                   <strong>Author:</strong>{" "}
-                  {selectedBook.authorBn ||
-                    getValue(selectedBook, "author") ||
-                    selectedBook.author}
+                  {selectedBook.authors?.length > 0
+                    ? selectedBook.authors.map((a) => a.name).join(", ")
+                    : "N/A"}
                 </p>
                 <p>
-                  <strong>Category:</strong> {selectedBook.category}
+                  <strong>Category:</strong>{" "}
+                  {selectedBook.categories?.length > 0
+                    ? selectedBook.categories.map((c) => c.category).join(", ")
+                    : "N/A"}
                 </p>
                 <p>
-                  <strong>Price:</strong> ৳{selectedBook.discountedPrice}
+                  <strong>Collections:</strong>{" "}
+                  {selectedBook.collections?.length > 0
+                    ? selectedBook.collections.map((c) => c.label || c.value).join(", ")
+                    : "N/A"}
+                </p>
+                <p>
+                  <strong>Price:</strong>{" "}
+                  <span className="text-red-500 font-semibold">
+                    ৳{selectedBook.discountedPrice ?? "N/A"}
+                  </span>{" "}
+                  {selectedBook.discount ? `(${selectedBook.discount}%)` : ""}
+                  {selectedBook.price ? (
+                    <span className="text-green-600 font-semibold ml-2">
+                      ৳{selectedBook.price}
+                    </span>
+                  ) : null}
                 </p>
               </div>
             </div>
-            <p>{getValue(selectedBook, "description.bn")}</p>
+            <p className="text-sm text-gray-700">
+              {getValue(selectedBook, "description.bn") ||
+                getValue(selectedBook, "description.en") ||
+                "No description available."}
+            </p>
           </div>
         </div>
       )}

@@ -2,13 +2,7 @@
 
 
 import { NextResponse } from "next/server";
-import cloudinary from "cloudinary";
-
-cloudinary.v2.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+import cloudinary from "@/lib/cloudinary";
 
 export async function GET(req) {
   try {
@@ -19,19 +13,48 @@ export async function GET(req) {
       return new NextResponse("Missing PDF id", { status: 400 });
     }
 
-    // ✅ CORRECT: generate signed authenticated URL
-    const signedUrl = cloudinary.v2.utils.private_download_url(
-      publicId,
-      "pdf",
-      {
+    const normalizedId = publicId.replace(/\.pdf$/i, "");
+
+    const candidateUrls = [
+      // Public upload URL
+      cloudinary.url(publicId, {
         resource_type: "raw",
+        type: "upload",
+        secure: true,
+      }),
+      // Signed upload URL
+      cloudinary.url(normalizedId, {
+        resource_type: "raw",
+        type: "upload",
+        sign_url: true,
+        secure: true,
+        format: "pdf",
+      }),
+      // Signed authenticated URL
+      cloudinary.url(normalizedId, {
+        resource_type: "raw",
+        type: "authenticated",
+        sign_url: true,
+        secure: true,
+        format: "pdf",
+      }),
+      // Private download fallback (authenticated)
+      cloudinary.utils.private_download_url(normalizedId, "pdf", {
+        resource_type: "raw",
+        type: "authenticated",
+      }),
+    ];
+
+    let pdfResponse = null;
+    for (const candidate of candidateUrls) {
+      const res = await fetch(candidate);
+      if (res.ok) {
+        pdfResponse = res;
+        break;
       }
-    );
+    }
 
-    const pdfResponse = await fetch(signedUrl);
-
-    if (!pdfResponse.ok) {
-      console.error("Cloudinary fetch failed");
+    if (!pdfResponse?.ok) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 

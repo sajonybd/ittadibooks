@@ -1,19 +1,13 @@
 
 
 import { NextResponse } from "next/server";
-import { v2 as cloudinary } from "cloudinary";
+import cloudinary from "@/lib/cloudinary";
 import { writeFile, unlink } from "fs/promises";
 import path from "path";
 import os from "os";
 import { randomUUID } from "crypto";
 import { ObjectId } from "mongodb";
 import { connectDb } from "@/lib/connectDb";
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
 
 export async function PATCH(req, { params }) {
   try {
@@ -100,24 +94,62 @@ export async function PATCH(req, { params }) {
     }
     // Upload pdf  (only if a new one provided)
     let pdf = null;
+    let pagesImages = null;
+    let pdfSplitWarning = null;
     const pdfFile = formData.get("bookPdf");
     if (pdfFile?.size > 0 && pdfFile.arrayBuffer) {
       const buffer = Buffer.from(await pdfFile.arrayBuffer());
       const filename = `${randomUUID()}-${pdfFile.name}`;
       const tmpPath = path.join(os.tmpdir(), filename);
-      await writeFile(tmpPath, buffer);
 
-      const result = await cloudinary.uploader.upload(tmpPath, {
-        folder: "books/pdf",
-        resource_type: "raw",          // PDF is a raw file
-        // type: "authenticated",         // IMPORTANT: must be "authenticated"
-        access_mode: "public"
+      try {
+        await writeFile(tmpPath, buffer);
 
-      });
+        const result = await cloudinary.uploader.upload(tmpPath, {
+          folder: "books/pdf",
+          resource_type: "raw",
+          access_mode: "public",
+        });
+        pdf = { url: result.secure_url, publicId: result.public_id };
 
-      pdf = { url: result.secure_url, publicId: result.public_id };
+        try {
+          // Upload again as image/pdf to get Cloudinary page count and page-based JPG delivery URLs.
+          const previewAsset = await cloudinary.uploader.upload(tmpPath, {
+            folder: `books/pages/${bookId}`,
+            public_id: "source-pdf",
+            overwrite: true,
+            resource_type: "image",
+            format: "pdf",
+          });
 
-      await unlink(tmpPath);
+          const totalPages = Number(previewAsset?.pages || 0);
+          pagesImages = [];
+
+          for (let pageNum = 1; pageNum <= totalPages; pageNum += 1) {
+            const pageUrl = cloudinary.url(previewAsset.public_id, {
+              secure: true,
+              resource_type: "image",
+              type: "upload",
+              format: "jpg",
+              page: pageNum,
+              sign_url: true,
+            });
+
+            pagesImages.push({
+              page: pageNum,
+              url: pageUrl,
+              publicId: `${previewAsset.public_id}:page-${pageNum}`,
+            });
+          }
+        } catch (splitError) {
+          pagesImages = [];
+          pdfSplitWarning =
+            "PDF uploaded, but page JPG generation failed from Cloudinary.";
+          console.error("PDF split failed:", splitError);
+        }
+      } finally {
+        await unlink(tmpPath).catch(() => {});
+      }
     }
 
     // Build update object
@@ -156,6 +188,7 @@ export async function PATCH(req, { params }) {
     }
     if (pdf) {
       updateData.pdf = pdf;
+      updateData.pagesImages = pagesImages || [];
     }
 
     // Update in MongoDB
@@ -168,11 +201,11 @@ export async function PATCH(req, { params }) {
       return NextResponse.json({ error: "Book not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, warning: pdfSplitWarning });
   } catch (error) {
-    // // console.error("PATCH /books error:", error);
+    console.error("PATCH /books error:", error);
     return NextResponse.json(
-      { error: "Failed to update book" },
+      { error: `Failed to update book: ${error?.message || "Unknown error"}` },
       { status: 500 }
     );
   }

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { connectDb } from "@/lib/connectDb";
-import { v2 as cloudinary } from "cloudinary";
+import cloudinary from "@/lib/cloudinary";
 
 export async function POST(req) {
   try {
@@ -14,13 +14,6 @@ export async function POST(req) {
 
     // Convert blob to buffer
     const buffer = Buffer.from(await file.arrayBuffer());
-
-    // Upload to Cloudinary
-    cloudinary.config({
-      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-      api_key: process.env.CLOUDINARY_API_KEY,
-      api_secret: process.env.CLOUDINARY_API_SECRET,
-    });
 
     const uploadResult = await new Promise((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(

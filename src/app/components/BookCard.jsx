@@ -98,27 +98,54 @@ export default function BookCard({ book }) {
    
 
   useEffect(() => {
+    const syncWishlistOnce = async () => {
+      const email = session?.data?.user?.email;
+      if (!email) return;
+
+      const owner = localStorage.getItem("wishlistOwnerEmail");
+      if (owner && owner !== email) {
+        localStorage.removeItem("wishlistBookIdsInitialized");
+        localStorage.setItem("wishlistBookIds", "[]");
+        localStorage.setItem("wishlistCount", "0");
+      }
+
+      if (localStorage.getItem("wishlistBookIdsInitialized") === "1") return;
+
+      if (window.__wishlistInitPromise) {
+        await window.__wishlistInitPromise;
+        return;
+      }
+
+      window.__wishlistInitPromise = (async () => {
+        try {
+          const res = await axios.get(
+            `${process.env.NEXT_PUBLIC_BASE_URL}/api/wishlist/getBooks`
+          );
+          const books = res?.data?.books || [];
+          const ids = books.map((b) => b.bookId).filter(Boolean);
+          localStorage.setItem("wishlistBookIds", JSON.stringify(ids));
+          localStorage.setItem("wishlistCount", String(ids.length));
+          localStorage.setItem("wishlistOwnerEmail", email);
+          localStorage.setItem("wishlistBookIdsInitialized", "1");
+          window.dispatchEvent(new Event("wishlistUpdated"));
+        } catch (error) {
+        } finally {
+          window.__wishlistInitPromise = null;
+        }
+      })();
+
+      await window.__wishlistInitPromise;
+    };
+
     const checkWishlist = async () => {
       const book_id = book?.bookId || book?._id;
       if (!book_id) return;
 
-      // 1. Check localStorage first
-      const localWishlist = JSON.parse(localStorage.getItem("wishlistBookIds") || "[]");
-      if (localWishlist.includes(book_id)) {
-        setInWishlist(true);
-        return; // found locally, no need to call API
-      }
-
-      // 2. If not found locally, check backend (only if logged in)
-      if (session?.data?.user?.email) {
-        try {
-          const res = await axios.get(
-            `${process.env.NEXT_PUBLIC_BASE_URL}/api/wishlist/check?bookId=${book_id}`
-          );
-          setInWishlist(!!res.data?.inWishlist);
-        } catch (error) {
-        }
-      }
+      await syncWishlistOnce();
+      const localWishlist = JSON.parse(
+        localStorage.getItem("wishlistBookIds") || "[]"
+      );
+      setInWishlist(localWishlist.includes(book_id));
     };
 
     checkWishlist();
@@ -128,27 +155,58 @@ export default function BookCard({ book }) {
 
 
   useEffect(() => {
+    const syncCartOnce = async () => {
+      const email = session?.data?.user?.email;
+      if (!email) return;
+
+      const owner = localStorage.getItem("cartOwnerEmail");
+      if (owner && owner !== email) {
+        localStorage.removeItem("cartBookIdsInitialized");
+        localStorage.setItem("cartBookIds", "[]");
+        localStorage.setItem("cartCount", "0");
+      }
+
+      if (localStorage.getItem("cartBookIdsInitialized") === "1") return;
+
+      if (window.__cartInitPromise) {
+        await window.__cartInitPromise;
+        return;
+      }
+
+      window.__cartInitPromise = (async () => {
+        try {
+          const res = await fetch(
+            `${process.env.NEXT_PUBLIC_BASE_URL}/api/cart/getBooks`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({}),
+            }
+          );
+          const data = await res.json();
+          const books = data?.books || [];
+          const ids = books.map((b) => b.bookId).filter(Boolean);
+          localStorage.setItem("cartBookIds", JSON.stringify(ids));
+          localStorage.setItem("cartCount", String(ids.length));
+          localStorage.setItem("cartOwnerEmail", email);
+          localStorage.setItem("cartBookIdsInitialized", "1");
+          window.dispatchEvent(new Event("cartUpdated"));
+        } catch (error) {
+        } finally {
+          window.__cartInitPromise = null;
+        }
+      })();
+
+      await window.__cartInitPromise;
+    };
+
     const checkCart = async () => {
       const book_id = book?.bookId || book?._id;
       if (!book_id) return;
 
-      // 1. Check localStorage first
+      await syncCartOnce();
       const localCart = JSON.parse(localStorage.getItem("cartBookIds") || "[]");
-      if (localCart.includes(book_id)) {
-        setInCart(true);
-        return; // stop here — no need for API call
-      }
-
-      // 2. If not found locally, optionally check server (if logged in)
-      if (session?.data?.user?.email) {
-        try {
-          const res = await axios.get(
-            `${process.env.NEXT_PUBLIC_BASE_URL}/api/cart/check?bookId=${book_id}`
-          );
-          setInCart(!!res.data?.inCart);
-        } catch (error) {
-        }
-      }
+      setInCart(localCart.includes(book_id));
     };
 
     checkCart();

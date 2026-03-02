@@ -431,7 +431,7 @@ export default function NavBarClient({books}) {
                       {book.title?.[locale] || "Untitled"}
                     </span>
                     <span className="text-sm text-gray-500 group-hover:text-gray-200">
-                      {book.authors?.map((a) => a.name).join(", ") || "Unknown"}
+                      {book.authors?.map((a) => a.name).join(", ")}
                     </span>
                     {/* Optional: small arrow on hover */}
                     <span className="absolute right-4 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 text-white">
@@ -758,7 +758,7 @@ export default function NavBarClient({books}) {
                       {book.title?.[locale] || "Untitled"}
                     </span>
                     <span className="text-sm text-gray-500 group-hover:text-gray-200">
-                      {book.authors?.map((a) => a.name).join(", ") || "Unknown"}
+                      {book.authors?.map((a) => a.name).join(", ")}
                     </span>
                     {/* Optional: small arrow on hover */}
                     <span className="absolute right-4 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 text-white">

@@ -2,22 +2,17 @@
 
 
 import { NextResponse } from "next/server";
-import { v2 as cloudinary } from "cloudinary";
+import cloudinary from "@/lib/cloudinary";
 import { writeFile, unlink } from "fs/promises";
 import path from "path";
 import os from "os";
 import { randomUUID } from "crypto";
 import { connectDb } from "@/lib/connectDb";
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
-
 export async function POST(req) {
   try {
     const formData = await req.formData();
+    const bookId = `book${randomUUID()}`;
 
     // Titles
     const titleEn = formData.get("titleEn") || "";
@@ -97,23 +92,61 @@ export async function POST(req) {
 
     // PDF upload (optional)
     let pdfUrl = "", pdfPublicId = "";
+    let pagesImages = [];
+    let pdfSplitWarning = null;
     const pdfFile = formData.get("bookPdf");
     if (pdfFile && pdfFile.arrayBuffer && pdfFile.size > 0) {
       try {
         const buffer = Buffer.from(await pdfFile.arrayBuffer());
         const filename = `${randomUUID()}-${pdfFile.name}`;
         const tmpPath = path.join(os.tmpdir(), filename);
-        await writeFile(tmpPath, buffer);
+        try {
+          await writeFile(tmpPath, buffer);
 
-        const result = await cloudinary.uploader.upload(tmpPath, {
-          folder: "books/pdf",
-          resource_type: "raw",          // PDF is a raw file
-          access_mode: "public"
-        });
+          const result = await cloudinary.uploader.upload(tmpPath, {
+            folder: "books/pdf",
+            resource_type: "raw",
+            access_mode: "public",
+          });
 
-        pdfUrl = result.secure_url;
-        pdfPublicId = result.public_id;
-        await unlink(tmpPath);
+          pdfUrl = result.secure_url;
+          pdfPublicId = result.public_id;
+
+          try {
+            const previewAsset = await cloudinary.uploader.upload(tmpPath, {
+              folder: `books/pages/${bookId}`,
+              public_id: "source-pdf",
+              overwrite: true,
+              resource_type: "image",
+              format: "pdf",
+            });
+
+            const totalPages = Number(previewAsset?.pages || 0);
+            for (let pageNum = 1; pageNum <= totalPages; pageNum += 1) {
+              const pageUrl = cloudinary.url(previewAsset.public_id, {
+                secure: true,
+                resource_type: "image",
+                type: "upload",
+                format: "jpg",
+                page: pageNum,
+                sign_url: true,
+              });
+
+              pagesImages.push({
+                page: pageNum,
+                url: pageUrl,
+                publicId: `${previewAsset.public_id}:page-${pageNum}`,
+              });
+            }
+          } catch (splitError) {
+            pagesImages = [];
+            pdfSplitWarning =
+              "PDF uploaded, but page JPG generation failed from Cloudinary.";
+            console.error("PDF split failed:", splitError);
+          }
+        } finally {
+          await unlink(tmpPath).catch(() => {});
+        }
       } catch (err) {
         console.error("PDF upload failed:", err);
         return NextResponse.json(
@@ -123,13 +156,11 @@ export async function POST(req) {
       }
     }
 
-    // PagesImages & totalPages
-    const pagesImages = [];
+    // totalPages
     const totalPages = pages;
 
     // Save to DB
     const db = await connectDb();
-    const bookId = `book${randomUUID()}`;
 
     const bookData = {
       bookId,
@@ -165,7 +196,7 @@ export async function POST(req) {
     const res = await db.collection("books").insertOne(bookData);
 
     return NextResponse.json(
-      { success: true, bookId: res.insertedId },
+      { success: true, bookId: res.insertedId, warning: pdfSplitWarning },
       { status: 201 }
     );
   } catch (error) {

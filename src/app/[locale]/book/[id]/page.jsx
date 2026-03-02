@@ -10,13 +10,7 @@ import BookCard from "@/app/components/BookCard";
 import { useLocale, useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
 import axios from "axios";
-import { PDFViewer } from "@react-pdf/renderer";
-import MyDocument from "@/app/components/MyDocument";
 import toast from "react-hot-toast";
- 
-import { Button } from "@mui/material";
-// import PdfViewerComponentNew from "@/app/components/pdfViewer/pdfViewer";
-
 import dynamic from "next/dynamic";
 
 const PdfViewerComponentNew = dynamic(
@@ -90,26 +84,16 @@ export default function BookDetailPage() {
   const [pdfUrl, setPdfUrl] = useState(null);
 
   useEffect(() => {
-    const fetchPdf = async () => {
-      try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/pdf/protectpdf/test`);
-        if (!res.ok) throw new Error("PDF not found");
-
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        setPdfUrl(url); // temporary URL for the browser
-      } catch (err) {
-        console.error(err);
-      }
-    };
-
-    fetchPdf();
-
-    // Cleanup blob URL on unmount
-    return () => {
-      if (pdfUrl) URL.revokeObjectURL(pdfUrl);
-    };
-  }, []);
+    if (!book?.pdf?.publicId) {
+      setPdfUrl(null);
+      return;
+    }
+    setPdfUrl(
+      `${process.env.NEXT_PUBLIC_BASE_URL}/api/secure-pdf?id=${encodeURIComponent(
+        book.pdf.publicId
+      )}`
+    );
+  }, [book?.pdf?.publicId]);
 
   
 
@@ -311,8 +295,10 @@ export default function BookDetailPage() {
 
 
   const hadnleShowPdf = () => {
-     
-    
+    if (!book?.pagesImages?.length && !pdfUrl) {
+      toast.error("Preview is not available for this book");
+      return;
+    }
     setOpen(!open);
   }
 
@@ -348,7 +334,14 @@ export default function BookDetailPage() {
               </div>
               <div>
              {
-              open && <PdfViewerComponentNew open={open} setOpen={setOpen} pdfUrl={pdfUrl}/>
+              open && (
+                <PdfViewerComponentNew
+                  open={open}
+                  setOpen={setOpen}
+                  pdfUrl={pdfUrl}
+                  pageImages={book?.pagesImages || []}
+                />
+              )
              }
                
               </div>

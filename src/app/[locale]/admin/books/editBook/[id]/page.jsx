@@ -65,15 +65,11 @@ export default function EditBookPage() {
   const [existingBookPdf, setExistingBookPdf] = useState("");
   useEffect(() => {
     const fetchAuthors = async () => {
-      const data = await axios.get(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/authors/getAllName`
-      );
+      const data = await axios.get("/api/admin/authors/getAllName");
       setAuthors(data?.data?.authors || []);
     };
     const fetchCategories = async () => {
-      const data = await axios.get(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/categories/getAll`
-      );
+      const data = await axios.get("/api/admin/categories/getAll");
 
       setCategories(data?.data?.categories || []);
     };
@@ -97,17 +93,13 @@ export default function EditBookPage() {
       try {
         setLoading(true);
         // 1. Fetch categories from DB
-        const catRes = await axios.get(
-          `${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/categories/getAll`
-        );
+        const catRes = await axios.get("/api/admin/categories/getAll");
         const cats = catRes.data.categories || [];
         setCategories(cats);
 
         // 2. Fetch book data
-        const bookRes = await axios.get(
-          `${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/books/bookbyid/${id}`
-        );
-        const book = bookRes.data;
+        const bookRes = await axios.get(`/api/admin/books/bookbyid/${id}`);
+        const book = bookRes?.data?.book || bookRes?.data || {};
 
         // 3. Map book.categories array to categoriesSelected
         const mappedCategories = (book.categories || [])
@@ -156,18 +148,18 @@ export default function EditBookPage() {
         );
 
         // 4. Set other fields
-        setTitleEn(book.title.en || "");
-        setTitleBn(book.title.bn || "");
-        setSubtitleEn(book.title.subtitle?.en || "");
-        setSubtitleBn(book.title.subtitle?.bn || "");
+        setTitleEn(book?.title?.en || "");
+        setTitleBn(book?.title?.bn || "");
+        setSubtitleEn(book?.title?.subtitle?.en || "");
+        setSubtitleBn(book?.title?.subtitle?.bn || "");
         setAuthorList(
-          book.authors.length ? book.authors : [{ name: "", uid: "" }]
+          book?.authors?.length ? book.authors : [{ name: "", uid: "" }]
         );
         setTranslatorList(
-          book.translators.length ? book.translators : [{ name: "", uid: "" }]
+          book?.translators?.length ? book.translators : [{ name: "", uid: "" }]
         );
         setEditorList(
-          book.editors.length ? book.editors : [{ name: "", uid: "" }]
+          book?.editors?.length ? book.editors : [{ name: "", uid: "" }]
         );
         // setPublisher(book.publisher || "");
         // Handle publisher on fetch
@@ -202,7 +194,7 @@ export default function EditBookPage() {
         setAvailability(book.availability || "");
 
         setCollections(
-          book.collections.length
+          book?.collections?.length
             ? book.collections.map((c) => ({
               value: c.value,
               label: c.label,
@@ -309,10 +301,7 @@ export default function EditBookPage() {
         formData.append("collections[]", JSON.stringify(c))
       );
 
-      const res = await axios.patch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/books/update/${id}`,
-        formData
-      );
+      const res = await axios.patch(`/api/admin/books/update/${id}`, formData);
       if (res.data.success) {
         toast.success("Book updated successfully");
         router.push("/admin/books");

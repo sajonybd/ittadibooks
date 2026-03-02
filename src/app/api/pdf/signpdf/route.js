@@ -1,13 +1,7 @@
 
 
 
-import cloudinary from "cloudinary";
-
-cloudinary.v2.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+import cloudinary from "@/lib/cloudinary";
 
 export async function GET(req) {
   try {
@@ -23,7 +17,7 @@ export async function GET(req) {
     let response;
 
     for (const resourceType of ["image", "raw"]) {
-      const url = cloudinary.v2.utils.private_download_url(public_id, "pdf", {
+      const url = cloudinary.utils.private_download_url(public_id, "pdf", {
         resource_type: resourceType,
         type: "authenticated",
         expires_at: Math.floor(Date.now() / 1000) + 600,

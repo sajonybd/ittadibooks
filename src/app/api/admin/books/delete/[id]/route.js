@@ -5,9 +5,26 @@ import { NextResponse } from "next/server";
 export async function DELETE(req, { params }) {
   try {
     const db = await connectDb();
-    const bookId = params.id;
+    const resolvedParams =
+      params && typeof params.then === "function" ? await params : params;
 
-    const result = await db.collection("books").deleteOne({ _id: new ObjectId(bookId) });
+    const pathSegments = req.nextUrl.pathname.split("/").filter(Boolean);
+    const fallbackId = pathSegments[pathSegments.length - 1];
+
+    const rawId = (resolvedParams?.id || fallbackId || "").trim();
+
+    if (!rawId) {
+      return NextResponse.json({ error: "Book id is required" }, { status: 400 });
+    }
+
+    const candidates = [{ bookId: rawId }, { _id: rawId }];
+    if (ObjectId.isValid(rawId)) {
+      candidates.unshift({ _id: new ObjectId(rawId) });
+    }
+
+    const result = await db.collection("books").deleteOne({
+      $or: candidates,
+    });
 
     if (result.deletedCount === 0) {
       return NextResponse.json({ error: "Book not found" }, { status: 404 });

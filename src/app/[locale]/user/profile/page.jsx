@@ -7,6 +7,8 @@ import { useEffect, useState } from "react";
 export default function ProfilePage() {
   const { data: session } = useSession();
 // const { locale } = useRouter();
+  const cloudinaryUploadUrl =
+    process.env.NEXT_PUBLIC_CLOUDINARY_IMAGE_UPLOAD_URL || "";
   const [profileData, setProfileData] = useState({
     name: "",
     image: "",
@@ -94,8 +96,11 @@ export default function ProfilePage() {
     setUploading(true);
 
     try {
+      if (!cloudinaryUploadUrl) {
+        throw new Error("Cloudinary upload URL is not configured");
+      }
       const res = await fetch(
-        "https://api.cloudinary.com/v1_1/mdshihab/image/upload",
+        cloudinaryUploadUrl,
         {
           method: "POST",
           body: formData,

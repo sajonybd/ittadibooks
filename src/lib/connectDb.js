@@ -4,6 +4,19 @@
 import { MongoClient, ServerApiVersion } from "mongodb";
 
 const uri = process.env.NEXT_PUBLIC_MONGODB_URI;
+const dbNameFromUri = (() => {
+  try {
+    const pathname = new URL(uri).pathname || "";
+    return pathname.replace("/", "");
+  } catch {
+    return "";
+  }
+})();
+const dbName =
+  process.env.MONGODB_DB_NAME ||
+  process.env.NEXT_PUBLIC_MONGODB_DB_NAME ||
+  dbNameFromUri ||
+  "ittadibooks";
 
 let client;
 let clientPromise;
@@ -23,5 +36,5 @@ clientPromise = global._mongoClientPromise;
 
 export const connectDb = async () => {
   const connectedClient = await clientPromise;
-  return connectedClient.db("ittadibooks");
+  return connectedClient.db(dbName);
 };

@@ -1,13 +1,6 @@
 import { connectDb } from "@/lib/connectDb";
 import { NextResponse } from "next/server";
-import cloudinary from "cloudinary";
-
-// Cloudinary config
-cloudinary.v2.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+import cloudinary from "@/lib/cloudinary";
 
 export const config = {
   api: { bodyParser: false }, // not strictly needed in app router, safe to keep
@@ -29,17 +22,8 @@ export async function POST(req) {
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
 
-      const result = await cloudinary.v2.uploader.upload_stream(
-        { folder: "book-gallery" },
-        (error, result) => {
-          if (error) throw error;
-          return result;
-        }
-      );
-
-      // Use upload_stream with a Promise wrapper
       const uploadResult = await new Promise((resolve, reject) => {
-        const stream = cloudinary.v2.uploader.upload_stream(
+        const stream = cloudinary.uploader.upload_stream(
           { folder: "book-gallery" },
           (error, result) => {
             if (error) reject(error);

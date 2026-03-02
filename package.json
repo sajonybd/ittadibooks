@@ -6,7 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "cloudinary:migrate": "node scripts/migrate-cloudinary-assets.mjs",
+    "cloudinary:rewrite-urls": "node scripts/replace-cloudinary-urls.mjs",
+    "cloudinary:migrate-books": "node scripts/migrate-books-cloudinary-assets.mjs",
+    "cloudinary:rewrite-books-urls": "node scripts/replace-books-cloudinary-urls.mjs",
+    "mongodb:migrate-db": "node scripts/migrate-mongodb-database.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -53,7 +58,6 @@
     "next-auth": "^4.24.11",
     "next-intl": "^4.3.4",
     "pdf-lib": "^1.17.1",
-    "pdf2pic": "^3.2.0",
     "pdfjs-dist": "^3.11.174",
     "react": "^19.2.3",
     "react-datepicker": "^8.7.0",

@@ -6,6 +6,9 @@ import { useEffect, useState } from "react";
 export default function AboutUsPage() {
   const t = useTranslations("about");
   const [show, setShow] = useState(false);
+  const aboutBannerUrl =
+    process.env.NEXT_PUBLIC_ABOUT_BANNER_URL ||
+    "/assets/images/profile/profile.png";
 
   useEffect(() => {
     // simple fade-in animation trigger on mount
@@ -41,7 +44,7 @@ export default function AboutUsPage() {
         {/* Image Section */}
         <div className="w-full h-[500px] rounded-xl overflow-hidden shadow-xl cursor-pointer transition-transform duration-300 hover:scale-105">
           <Image
-            src="https://res.cloudinary.com/mdshihab/image/upload/v1754671581/slider-banners/btnqeceiuewivr75knqh.jpg"
+            src={aboutBannerUrl}
             alt="About our book website"
             width={600}
             height={400}
