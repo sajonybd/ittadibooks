@@ -2,10 +2,6 @@ import { connectDb } from "@/lib/connectDb";
 import { NextResponse } from "next/server";
 import cloudinary from "@/lib/cloudinary";
 
-export const config = {
-  api: { bodyParser: false }, // not strictly needed in app router, safe to keep
-};
-
 export async function POST(req) {
   try {
     const formData = await req.formData();
