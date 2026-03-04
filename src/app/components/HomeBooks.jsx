@@ -1,17 +1,15 @@
  
 
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import BrowseSidebar from "./sidebar/Sidebar";
 import BookCollection from "./bookCollection/BookCollection";
 import Breadcrumbs from "./Breadcrumbs";
 import BookCard from "./BookCard";
-import CustomKeenSlider from "./CustomKeenSlider/CustomKeenSlider";
 import Notice from "./Notice/Notice";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import VideoSection from "./VideoSection";
-import BookSlider from "./SliderForBooks/SliderForBooksNew";
 import BannerSlider from "./SliderForBooks/SliderForBooksNew";
 
 export default function HomeBooks({ allBooks }) {
@@ -24,11 +22,14 @@ export default function HomeBooks({ allBooks }) {
     inStockOnly: false,
   });
   const [sort, setSort] = useState("ALL_BOOKS");
-  const [books, setBooks] = useState(allBooks);
   const [currentPage, setCurrentPage] = useState(1);
   const booksPerPage = 12;
 
   useEffect(() => {
+    setCurrentPage(1);
+  }, [filters, sort, allBooks]);
+
+  const books = useMemo(() => {
     let filtered = [...allBooks];
     if (filters.categories?.length) {
       filtered = filtered.filter((book) =>
@@ -63,14 +64,17 @@ export default function HomeBooks({ allBooks }) {
     else if (sort === "ID_DESC")
       filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-    setBooks(filtered);
-    setCurrentPage(1);
+    return filtered;
   }, [filters, sort, allBooks]);
 
   const totalPages = Math.ceil(books.length / booksPerPage);
-  const paginatedBooks = books.slice(
-    (currentPage - 1) * booksPerPage,
-    currentPage * booksPerPage
+  const paginatedBooks = useMemo(
+    () =>
+      books.slice(
+        (currentPage - 1) * booksPerPage,
+        currentPage * booksPerPage
+      ),
+    [books, currentPage]
   );
 
   const handlePageChange = (page) => {
@@ -107,8 +111,8 @@ export default function HomeBooks({ allBooks }) {
             {paginatedBooks.length > 0 ? (
               <>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4">
-                  {paginatedBooks.map((book, idx) => (
-                    <BookCard key={idx} book={book} />
+                  {paginatedBooks.map((book) => (
+                    <BookCard key={book?._id || book?.bookId} book={book} />
                   ))}
                 </div>
 

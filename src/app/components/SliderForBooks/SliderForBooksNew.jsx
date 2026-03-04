@@ -17,6 +17,7 @@ import "./styleNew.css";
 export default function BannerSlider() {
   const [banners, setBanners] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadedBannerIds, setLoadedBannerIds] = useState({});
 
   useEffect(() => {
     const fetchImages = async () => {
@@ -67,6 +68,9 @@ export default function BannerSlider() {
         {banners.map((banner, index) => (
           <SwiperSlide key={banner._id}>
             <div className="relative w-full h-[150px] sm:h-[200px] md:h-[280px] lg:h-[340px] xl:h-[400px]">
+              {!loadedBannerIds[banner._id] && (
+                <div className="absolute inset-0 z-10 animate-pulse bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100" />
+              )}
               <Image
                 src={banner.imageUrl}
                 alt={`Banner ${index + 1}`}
@@ -74,6 +78,9 @@ export default function BannerSlider() {
                 priority={index === 0} // Prioritize only the first image
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 90vw, 1440px"
                 className="object-cover object-center"
+                onLoad={() =>
+                  setLoadedBannerIds((prev) => ({ ...prev, [banner._id]: true }))
+                }
               />
             </div>
           </SwiperSlide>

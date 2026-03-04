@@ -52,8 +52,8 @@ export default function SwiperForBooks({ books }) {
                     className="mySwiper booksSwiper"
                 >
                     {
-                        books.length > 0 && books.map((book, idx) => (
-                            <SwiperSlide className="h-full" key={idx}>
+                        books.length > 0 && books.map((book) => (
+                            <SwiperSlide className="h-full" key={book?._id || book?.bookId}>
                                 <BookCard book={book} />
                             </SwiperSlide>
                         ))

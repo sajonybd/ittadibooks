@@ -22,6 +22,7 @@ export default function BookCard({ book }) {
 
   const [inWishlist, setInWishlist] = useState(false);
   const [inCart, setInCart] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   const width = typeof window !== "undefined" ? window.innerWidth : 0;
 
@@ -66,7 +67,7 @@ export default function BookCard({ book }) {
     setInWishlist(false);
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = (showDrawer = true) => {
     const current = parseInt(localStorage.getItem("cartCount")) || 0;
     localStorage.setItem("cartCount", current + 1);
 
@@ -78,7 +79,9 @@ export default function BookCard({ book }) {
     }
 
     window.dispatchEvent(new Event("cartUpdated"));
-    window.dispatchEvent(new Event("openCart"));
+    if (showDrawer) {
+      window.dispatchEvent(new Event("openCart"));
+    }
     setInCart(true);
   };
 
@@ -96,6 +99,10 @@ export default function BookCard({ book }) {
   };
 
    
+
+  useEffect(() => {
+    setImageLoaded(false);
+  }, [book?.cover?.url]);
 
   useEffect(() => {
     const syncWishlistOnce = async () => {
@@ -230,14 +237,23 @@ export default function BookCard({ book }) {
 
       {/* Book Image */}
       <div className="relative h-48 w-full overflow-hidden rounded-t-xl bg-white flex items-center justify-center p-2">
+      {!imageLoaded && (
+        <div
+          aria-hidden
+          className="absolute inset-0 z-10 animate-pulse bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100"
+        />
+      )}
       <CloudinaryImage
-        priority
         width={300}
         height={300}
         src={book.cover?.url || "/placeholder.png"}
         alt={book?.title?.[locale]}
+        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
         placeholder="blur"
         blurDataURL="/placeholder.png"
+        loading="lazy"
+        onLoadingComplete={() => setImageLoaded(true)}
+        onError={() => setImageLoaded(true)}
         onClick={() => router.push(`/${locale}/book/${book?._id}`)}
         className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-110 cursor-pointer"
       />
@@ -340,8 +356,8 @@ export default function BookCard({ book }) {
            {/* Buy Now */}
            <button
              onClick={() => {
-               if(!inCart) handleAddToCart();
-               router.push(`/${locale}/cart`);
+               if(!inCart) handleAddToCart(false);
+               router.push(`/${locale}/checkout`);
              }}
              className="w-full rounded-lg bg-orange-500 py-2 text-xs font-bold text-white shadow hover:bg-orange-600 transition uppercase cursor-pointer"
            >
@@ -390,8 +406,8 @@ export default function BookCard({ book }) {
           {/* Buy Now Mobile */}
           <button
             onClick={() => {
-              if(!inCart) handleAddToCart();
-              router.push(`/${locale}/cart`);
+              if(!inCart) handleAddToCart(false);
+              router.push(`/${locale}/checkout`);
             }}
             className="w-full rounded-lg bg-orange-500 py-1.5 text-[10px] font-bold text-white shadow uppercase cursor-pointer"
           >

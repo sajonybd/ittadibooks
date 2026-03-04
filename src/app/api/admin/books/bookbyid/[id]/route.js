@@ -28,7 +28,16 @@ export async function GET(req, { params }) {
       return NextResponse.json({ error: "Book not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, book });
+    return NextResponse.json(
+      { success: true, book },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      }
+    );
   } catch (error) {
     // // // console.error(error);
     return NextResponse.json({ error: "Failed to fetch book" }, { status: 500 });

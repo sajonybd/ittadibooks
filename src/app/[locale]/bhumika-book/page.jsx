@@ -1,7 +1,5 @@
 "use client";
-import BookCard from "@/app/components/BookCard";
 import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import FilteredBookGrid from "@/app/components/FilteredBookGrid";
 
@@ -9,12 +7,14 @@ import FilteredBookGrid from "@/app/components/FilteredBookGrid";
 
 export default function BhumikaBooksPage() {
   const [books, setBooks] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const t = useTranslations("bhumikaBooks");
 
   useEffect(() => {
     const fetchBooks = async () => {
       try {
+        setLoading(true);
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_BASE_URL}/api/getbookbycollection?collection=${"bhumikaBooks"}`
         );
@@ -22,6 +22,8 @@ export default function BhumikaBooksPage() {
         setBooks(data.books);
       } catch (error) {
         // // // console.error("Error fetching books:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -29,5 +31,5 @@ export default function BhumikaBooksPage() {
   }, []);
 
  
-  return <FilteredBookGrid allBooks={books} title={t("title")} />;
+  return <FilteredBookGrid allBooks={books} title={t("title")} isLoading={loading} />;
 }

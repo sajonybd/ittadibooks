@@ -1,98 +1,125 @@
 "use client";
 
-import { useState, useMemo } from "react";
-
-const ordersData = [
-  {
-    id: "ORD001",
-    customer: "John Doe",
-    email: "john@example.com",
-    amount: 2500,
-    paymentStatus: "Paid",
-    deliveryType: "Home Delivery",
-    deliveryStatus: "Shipped",
-    items: [
-      { name: "Book 1", qty: 2 },
-      { name: "Book 2", qty: 1 },
-    ],
-  },
-  {
-    id: "ORD002",
-    customer: "Jane Smith",
-    email: "jane.smith@example.com",
-    amount: 1800,
-    paymentStatus: "Unpaid",
-    deliveryType: "Store Pickup",
-    deliveryStatus: "Pending",
-    items: [{ name: "Book 3", qty: 1 }],
-  },
-  {
-    id: "ORD003",
-    customer: "Alice Johnson",
-    email: "alice.j@example.com",
-    amount: 3200,
-    paymentStatus: "Paid",
-    deliveryType: "Home Delivery",
-    deliveryStatus: "Delivered",
-    items: [
-      { name: "Book 4", qty: 3 },
-      { name: "Book 5", qty: 1 },
-    ],
-  },
-];
+import { useEffect, useMemo, useState } from "react";
+import Pagination from "@/app/components/Pagination";
 
 const badgeStyles = {
-  Paid: "bg-green-100 text-green-700",
-  Unpaid: "bg-red-100 text-red-700",
-  "Home Delivery": "bg-blue-100 text-blue-700",
-  "Store Pickup": "bg-purple-100 text-purple-700",
-  Delivered: "bg-green-100 text-green-700",
-  Shipped: "bg-blue-100 text-blue-700",
-  Pending: "bg-yellow-100 text-yellow-700",
+  paid: "bg-green-100 text-green-700",
+  pending: "bg-yellow-100 text-yellow-700",
+  failed: "bg-red-100 text-red-700",
+  cod: "bg-blue-100 text-blue-700",
+  ssl: "bg-purple-100 text-purple-700",
+  delivered: "bg-green-100 text-green-700",
+  shipped: "bg-blue-100 text-blue-700",
+};
+
+const normalizeLabel = (value, fallback = "N/A") => {
+  if (!value) return fallback;
+  return String(value)
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 };
 
 export default function AdminOrdersPage() {
-  const [orders, setOrders] = useState(ordersData);
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortKey, setSortKey] = useState("id");
-  const [sortOrder, setSortOrder] = useState("asc");
+  const [sortKey, setSortKey] = useState("createdAt");
+  const [sortOrder, setSortOrder] = useState("desc");
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [editPaymentStatus, setEditPaymentStatus] = useState("pending");
+  const [editDeliveryStatus, setEditDeliveryStatus] = useState("pending");
+  const [savingStatus, setSavingStatus] = useState(false);
+  const [statusNotice, setStatusNotice] = useState("");
+  const [page, setPage] = useState(1);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 });
 
-  // Sorting function
-  const sortedOrders = useMemo(() => {
-    let filtered = orders.filter((order) =>
-      [order.id, order.customer, order.email]
-        .some((field) =>
-          field.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-    );
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPage(1);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [searchTerm, sortKey, sortOrder]);
 
-    filtered.sort((a, b) => {
-      let aKey = a[sortKey].toLowerCase();
-      let bKey = b[sortKey].toLowerCase();
+  useEffect(() => {
+    let mounted = true;
 
-      if (aKey < bKey) return sortOrder === "asc" ? -1 : 1;
-      if (aKey > bKey) return sortOrder === "asc" ? 1 : -1;
-      return 0;
-    });
+    const fetchOrders = async () => {
+      try {
+        setLoading(true);
+        const params = new URLSearchParams({
+          page: String(page),
+          limit: "20",
+          search: searchTerm.trim(),
+          sortField: sortKey,
+          sortOrder,
+        });
 
-    return filtered;
-  }, [orders, searchTerm, sortKey, sortOrder]);
+        const res = await fetch(`/api/admin/orders/getAll?${params.toString()}`);
+        const data = await res.json();
 
-  // Handle column header click to sort
+        if (!mounted) return;
+
+        if (res.ok && data?.success) {
+          setOrders(data.orders || []);
+          setPagination(data.pagination || { page: 1, limit: 20, total: 0, totalPages: 1 });
+        } else {
+          setOrders([]);
+          setPagination({ page: 1, limit: 20, total: 0, totalPages: 1 });
+        }
+      } catch {
+        if (!mounted) return;
+        setOrders([]);
+        setPagination({ page: 1, limit: 20, total: 0, totalPages: 1 });
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    fetchOrders();
+
+    return () => {
+      mounted = false;
+    };
+  }, [page, searchTerm, sortKey, sortOrder, reloadKey]);
+
   const handleSort = (key) => {
     if (sortKey === key) {
-      // toggle sort order
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+      setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
     } else {
       setSortKey(key);
       setSortOrder("asc");
     }
   };
 
+  const tableRows = useMemo(() => {
+    return orders.map((order) => {
+      const paymentStatus = String(order?.paymentStatus || "pending").toLowerCase();
+      const deliveryStatus = String(order?.deliveryStatus || "pending").toLowerCase();
+      const paymentMethod = String(order?.paymentMethod || "cod").toLowerCase();
+
+      return {
+        id: order?.orderId || order?.paymentTransactionId || String(order?._id || "-"),
+        customer: order?.fullName || "N/A",
+        email: order?.email || "N/A",
+        amount: Number(order?.grandTotal || 0),
+        paymentStatus,
+        paymentMethod,
+        deliveryStatus,
+        raw: order,
+      };
+    });
+  }, [orders]);
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <h1 className="text-3xl font-bold mb-6 text-gray-800">Orders</h1>
+      {statusNotice && (
+        <p className="mb-3 rounded border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-700">
+          {statusNotice}
+        </p>
+      )}
 
       <div className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <input
@@ -105,24 +132,24 @@ export default function AdminOrdersPage() {
 
         <div className="flex gap-2 items-center text-gray-700">
           <span>Sort by:</span>
-          {["id", "customer", "email"].map((key) => (
+          {["createdAt", "orderId", "customer", "email", "amount"].map((key) => (
             <button
               key={key}
               onClick={() => handleSort(key)}
               className={`px-3 py-1 rounded cursor-pointer transition ${
-                sortKey === key
-                  ? "bg-[#51acec] text-white"
-                  : "bg-white hover:bg-blue-100"
+                sortKey === key ? "bg-[#51acec] text-white" : "bg-white hover:bg-blue-100"
               }`}
             >
-              {key === "id"
+              {key === "createdAt"
+                ? "Date"
+                : key === "orderId"
                 ? "Order ID"
                 : key === "customer"
                 ? "Customer"
-                : "Email"}
-              {sortKey === key && (
-                <span>{sortOrder === "asc" ? " ↑" : " ↓"}</span>
-              )}
+                : key === "email"
+                ? "Email"
+                : "Amount"}
+              {sortKey === key && <span>{sortOrder === "asc" ? " ↑" : " ↓"}</span>}
             </button>
           ))}
         </div>
@@ -132,78 +159,93 @@ export default function AdminOrdersPage() {
         <table className="min-w-full border-collapse">
           <thead className="bg-[#51acec] text-white">
             <tr>
-              <th className="p-4 text-left cursor-pointer">Order ID</th>
-              <th className="p-4 text-left cursor-pointer">Customer</th>
-              <th className="p-4 text-left cursor-pointer">Email</th>
+              <th className="p-4 text-left">Order ID</th>
+              <th className="p-4 text-left">Customer</th>
+              <th className="p-4 text-left">Email</th>
               <th className="p-4 text-left">Amount (৳)</th>
               <th className="p-4 text-left">Payment Status</th>
-              <th className="p-4 text-left">Delivery Type</th>
+              <th className="p-4 text-left">Payment Method</th>
               <th className="p-4 text-left">Delivery Status</th>
               <th className="p-4 text-left">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {sortedOrders.length === 0 && (
+            {!loading && tableRows.length === 0 && (
               <tr>
                 <td colSpan="8" className="text-center p-4 text-gray-600">
                   No orders found.
                 </td>
               </tr>
             )}
-            {sortedOrders.map((order) => (
-              <tr
-                key={order.id}
-                className="border-b hover:bg-gray-50 cursor-pointer"
-              >
-                <td className="p-4">{order.id}</td>
-                <td className="p-4">{order.customer}</td>
-                <td className="p-4">{order.email}</td>
-                <td className="p-4 font-semibold">৳ {order.amount}</td>
-                <td className="p-4">
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                      badgeStyles[order.paymentStatus] || "bg-gray-100 text-gray-600"
-                    }`}
-                  >
-                    {order.paymentStatus}
-                  </span>
-                </td>
-                <td className="p-4">
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                      badgeStyles[order.deliveryType] || "bg-gray-100 text-gray-600"
-                    }`}
-                  >
-                    {order.deliveryType}
-                  </span>
-                </td>
-                <td className="p-4">
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                      badgeStyles[order.deliveryStatus] || "bg-gray-100 text-gray-600"
-                    }`}
-                  >
-                    {order.deliveryStatus}
-                  </span>
-                </td>
-                <td className="p-4">
-                  <button
-                    onClick={() => setSelectedOrder(order)}
-                    className="text-blue-600 hover:underline"
-                  >
-                    View/Edit
-                  </button>
+            {loading && (
+              <tr>
+                <td colSpan="8" className="text-center p-4 text-gray-600">
+                  Loading orders...
                 </td>
               </tr>
-            ))}
+            )}
+            {!loading &&
+              tableRows.map((order) => (
+                <tr key={order.id} className="border-b hover:bg-gray-50">
+                  <td className="p-4">{order.id}</td>
+                  <td className="p-4">{order.customer}</td>
+                  <td className="p-4">{order.email}</td>
+                  <td className="p-4 font-semibold">৳ {order.amount}</td>
+                  <td className="p-4">
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                        badgeStyles[order.paymentStatus] || "bg-gray-100 text-gray-600"
+                      }`}
+                    >
+                      {normalizeLabel(order.paymentStatus)}
+                    </span>
+                  </td>
+                  <td className="p-4">
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                        badgeStyles[order.paymentMethod] || "bg-gray-100 text-gray-600"
+                      }`}
+                    >
+                      {normalizeLabel(order.paymentMethod)}
+                    </span>
+                  </td>
+                  <td className="p-4">
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                        badgeStyles[order.deliveryStatus] || "bg-gray-100 text-gray-600"
+                      }`}
+                    >
+                      {normalizeLabel(order.deliveryStatus)}
+                    </span>
+                  </td>
+                  <td className="p-4">
+                    <button
+                      onClick={() => {
+                        setSelectedOrder(order.raw);
+                        setEditPaymentStatus(String(order.raw?.paymentStatus || "pending").toLowerCase());
+                        setEditDeliveryStatus(String(order.raw?.deliveryStatus || "pending").toLowerCase());
+                      }}
+                      className="text-blue-600 hover:underline cursor-pointer"
+                    >
+                      View
+                    </button>
+                  </td>
+                </tr>
+              ))}
           </tbody>
         </table>
       </div>
 
-      {/* Modal */}
-      {selectedOrder && (
-      <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <Pagination
+        currentPage={pagination.page || 1}
+        totalPages={pagination.totalPages || 1}
+        totalItems={pagination.total || 0}
+        pageSize={pagination.limit || 20}
+        onPageChange={(nextPage) => setPage(nextPage)}
+      />
 
+      {selectedOrder && (
+        <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white border-2 border-gray-400 rounded-lg max-w-lg w-full p-6 relative shadow-lg">
             <button
               onClick={() => setSelectedOrder(null)}
@@ -214,73 +256,105 @@ export default function AdminOrdersPage() {
             </button>
 
             <h2 className="text-2xl font-bold mb-4 text-gray-800">
-              Order Details - {selectedOrder.id}
+              Order Details - {selectedOrder?.orderId || selectedOrder?.paymentTransactionId || selectedOrder?._id}
             </h2>
 
-            <p className="mb-2">
-              <strong>Customer:</strong> {selectedOrder.customer}
-            </p>
-            <p className="mb-2">
-              <strong>Email:</strong> {selectedOrder.email}
-            </p>
-            <p className="mb-2">
-              <strong>Amount:</strong> ৳ {selectedOrder.amount}
-            </p>
-            <p className="mb-2">
-              <strong>Payment Status:</strong>{" "}
-              <span
-                className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                  badgeStyles[selectedOrder.paymentStatus] ||
-                  "bg-gray-100 text-gray-600"
-                }`}
-              >
-                {selectedOrder.paymentStatus}
-              </span>
-            </p>
-            <p className="mb-2">
-              <strong>Delivery Type:</strong>{" "}
-              <span
-                className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                  badgeStyles[selectedOrder.deliveryType] ||
-                  "bg-gray-100 text-gray-600"
-                }`}
-              >
-                {selectedOrder.deliveryType}
-              </span>
-            </p>
-            <p className="mb-2">
-              <strong>Delivery Status:</strong>{" "}
-              <span
-                className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                  badgeStyles[selectedOrder.deliveryStatus] ||
-                  "bg-gray-100 text-gray-600"
-                }`}
-              >
-                {selectedOrder.deliveryStatus}
-              </span>
-            </p>
+            <p className="mb-2"><strong>Customer:</strong> {selectedOrder?.fullName || "N/A"}</p>
+            <p className="mb-2"><strong>Email:</strong> {selectedOrder?.email || "N/A"}</p>
+            <p className="mb-2"><strong>Phone:</strong> {selectedOrder?.mobile || "N/A"}</p>
+            <p className="mb-2"><strong>Amount:</strong> ৳ {selectedOrder?.grandTotal || 0}</p>
+            <p className="mb-2"><strong>Payment:</strong> {normalizeLabel(selectedOrder?.paymentMethod)}</p>
+            <p className="mb-2"><strong>Address:</strong> {selectedOrder?.address?.street || "N/A"}</p>
+
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  Payment Status
+                </label>
+                <select
+                  value={editPaymentStatus}
+                  onChange={(e) => setEditPaymentStatus(e.target.value)}
+                  className="w-full border rounded px-3 py-2"
+                >
+                  {["pending", "paid", "failed", "refunded"].map((status) => (
+                    <option key={status} value={status}>
+                      {normalizeLabel(status)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  Delivery Status
+                </label>
+                <select
+                  value={editDeliveryStatus}
+                  onChange={(e) => setEditDeliveryStatus(e.target.value)}
+                  className="w-full border rounded px-3 py-2"
+                >
+                  {["pending", "processing", "shipped", "delivered", "cancelled"].map((status) => (
+                    <option key={status} value={status}>
+                      {normalizeLabel(status)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
 
             <div className="mt-4">
               <h3 className="font-semibold mb-2">Items:</h3>
               <ul className="list-disc list-inside max-h-40 overflow-y-auto text-gray-700">
-                {selectedOrder.items.map((item, idx) => (
+                {(selectedOrder?.items || []).map((item, idx) => (
                   <li key={idx}>
-                    {item.name} × {item.qty}
+                    {item?.title?.bn || item?.title?.en || item?.title || item?.name || "Item"} × {item?.quantity || item?.qty || 1}
                   </li>
                 ))}
               </ul>
             </div>
 
-            {/* Future: You can add edit fields here */}
-
             <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={async () => {
+                  if (!selectedOrder?._id && !selectedOrder?.orderId) return;
+                  try {
+                    setSavingStatus(true);
+                    const targetId =
+                      (typeof selectedOrder?._id === "string"
+                        ? selectedOrder._id
+                        : selectedOrder?._id?.$oid) || selectedOrder?.orderId;
+                    const res = await fetch(`/api/admin/orders/update/${targetId}`, {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        paymentStatus: editPaymentStatus,
+                        deliveryStatus: editDeliveryStatus,
+                      }),
+                    });
+
+                    if (!res.ok) {
+                      throw new Error("Failed");
+                    }
+
+                    setSelectedOrder(null);
+                    setReloadKey((k) => k + 1);
+                    setStatusNotice("Order status updated successfully.");
+                  } catch {
+                    setStatusNotice("Failed to update order status.");
+                  } finally {
+                    setSavingStatus(false);
+                  }
+                }}
+                disabled={savingStatus}
+                className="px-4 py-2 bg-[#51acec] text-white rounded hover:bg-[#4690ac] disabled:opacity-60"
+              >
+                {savingStatus ? "Saving..." : "Save Status"}
+              </button>
               <button
                 onClick={() => setSelectedOrder(null)}
                 className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
               >
                 Close
               </button>
-              {/* Save button could go here if editing */}
             </div>
           </div>
         </div>

@@ -596,7 +596,7 @@ export default function NavBarClient({books}) {
                 {/* Sticky Checkout Button */}
                 <div className="p-4 border-t">
                   <Link
-                    href={`/${locale}/cart`}
+                    href={`/${locale}/checkout`}
                     onClick={() => setIsCartOpen(false)}
                     className="bg-[#51acec] block text-center w-full p-3 rounded-lg text-white font-medium cursor-pointer"
                   >
@@ -1099,7 +1099,7 @@ export default function NavBarClient({books}) {
 
             {/* cart button */}
              <Link
-              href={`/${locale}/cart`}
+              href={`/${locale}/checkout`}
               onClick={() => {
                 const sideMenu = document.getElementById("sidemenu");
                 if(sideMenu) sideMenu.style.left = "-100%";
@@ -1339,7 +1339,7 @@ export default function NavBarClient({books}) {
             {/* Sticky Checkout Button */}
             <div className="p-4">
               <Link
-                href={`/${locale}/cart`}
+                href={`/${locale}/checkout`}
                 onClick={() => {
                   const sideMenuCart = document.getElementById("sidemenuCart");
                   if(sideMenuCart) sideMenuCart.style.right = "-100%";

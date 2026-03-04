@@ -1,18 +1,19 @@
 import React, { useEffect, useState } from "react";
-import SliderForBooks from "../SliderForBooks/SliderForBooks";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import BookSlider from "../SliderForBooks/SliderForBooksNew";
 import SwiperForBooks from "../SwiperForBooks/SwiperForBooks";
+import SkeletonForBookCollection from "../SkeletonForBookCollection/SkeletonForBookCollection";
 
 export default function BookCollection({ titleText, collection, page }) {
   const [books, setBooks] = useState([]);
-// const { locale } = useRouter();
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
   useEffect(() => {
     const fetchBooks = async () => {
       if (!collection) return; // <-- ✅ protect the fetch
 
       try {
+        setLoading(true);
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_BASE_URL}/api/getbookbycollection/forCollection?collection=${collection}`
         );
@@ -20,6 +21,8 @@ export default function BookCollection({ titleText, collection, page }) {
         setBooks(data.books);
       } catch (error) {
         // // // console.error("Error fetching books:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -33,7 +36,7 @@ export default function BookCollection({ titleText, collection, page }) {
         <h3 className="text-base lg:text-xl font-semibold">{titleText}</h3>
         <button
           onClick={() => {
-            window.location.href = `${process.env.NEXT_PUBLIC_BASE_URL}${page}`; // Navigate to the page
+            router.push(page);
           }}
           className="flex items-center lg:gap-1 cursor-pointer"
         >
@@ -61,7 +64,15 @@ export default function BookCollection({ titleText, collection, page }) {
       {/* books grid */}
 
       <div className="">
-        <SwiperForBooks books={books} />
+        {loading ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 md:gap-4">
+            {[...Array(5)].map((_, idx) => (
+              <SkeletonForBookCollection key={idx} />
+            ))}
+          </div>
+        ) : (
+          <SwiperForBooks books={books} />
+        )}
         
       </div>
     </div>

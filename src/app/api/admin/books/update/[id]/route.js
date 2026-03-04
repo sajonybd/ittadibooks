@@ -131,6 +131,7 @@ export async function PATCH(req, { params }) {
               resource_type: "image",
               type: "upload",
               format: "jpg",
+              version: previewAsset.version,
               page: pageNum,
               sign_url: true,
             });

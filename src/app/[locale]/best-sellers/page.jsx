@@ -1,7 +1,7 @@
 "use client";
 import BookCard from "@/app/components/BookCard";
+import SkeletonForBookCollection from "@/app/components/SkeletonForBookCollection/SkeletonForBookCollection";
 import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
  
@@ -10,6 +10,7 @@ export default function BestSellersPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const booksPerPage = 18;
   const [books, setBooks] = useState([]);
+  const [loading, setLoading] = useState(true);
   const totalPages = Math.ceil(books.length / booksPerPage);
   // const { locale } = useRouter();
   const paginatedBooks = books.slice(
@@ -26,6 +27,7 @@ export default function BestSellersPage() {
   useEffect(() => {
     const fetchBooks = async () => {
       try {
+        setLoading(true);
         const res = await fetch(
           `${
             process.env.NEXT_PUBLIC_BASE_URL
@@ -35,6 +37,8 @@ export default function BestSellersPage() {
         setBooks(data.books);
       } catch (error) {
         // // // console.error("Error fetching books:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -52,14 +56,22 @@ export default function BestSellersPage() {
           <p className="text-gray-600 text-lg">{t("subtitle")}</p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-6 gap-6">
-          {paginatedBooks.map((book, i) => (
-            <div key={i} className="border-2 border-gray-300 rounded-lg">
-              <BookCard book={book} />
-            </div>
-          ))}
-        </div>
-        {paginatedBooks.length > 0 && (
+        {loading ? (
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-6 gap-6">
+            {[...Array(12)].map((_, idx) => (
+              <SkeletonForBookCollection key={idx} />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-6 gap-6">
+            {paginatedBooks.map((book) => (
+              <div key={book?._id || book?.bookId} className="border-2 border-gray-300 rounded-lg">
+                <BookCard book={book} />
+              </div>
+            ))}
+          </div>
+        )}
+        {!loading && paginatedBooks.length > 0 && (
           <div className="flex justify-center mt-8 space-x-2">
             <button
               onClick={() => handlePageChange(currentPage - 1)}
@@ -131,6 +143,9 @@ export default function BestSellersPage() {
               {t("next")}
             </button>
           </div>
+        )}
+        {!loading && paginatedBooks.length === 0 && (
+          <p className="text-center py-10">No books found</p>
         )}
       </div>
     </div>

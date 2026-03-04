@@ -1,10 +1,11 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import BrowseSidebar from "./sidebar/Sidebar";
 import Breadcrumbs from "./Breadcrumbs";
 import BookCard from "./BookCard";
+import SkeletonForBookCollection from "./SkeletonForBookCollection/SkeletonForBookCollection";
 
-export default function FilteredBookGrid({ allBooks, title }) {
+export default function FilteredBookGrid({ allBooks, title, isLoading = false }) {
   const [filters, setFilters] = useState({
     categories: [],
     authors: [],
@@ -13,11 +14,14 @@ export default function FilteredBookGrid({ allBooks, title }) {
     inStockOnly: false,
   });
   const [sort, setSort] = useState("ALL_BOOKS");
-  const [books, setBooks] = useState(allBooks);
   const [currentPage, setCurrentPage] = useState(1);
   const booksPerPage = 12;
 
   useEffect(() => {
+    setCurrentPage(1);
+  }, [filters, sort, allBooks]);
+
+  const books = useMemo(() => {
     let filtered = [...allBooks];
     if (filters.categories?.length) {
       filtered = filtered.filter((book) =>
@@ -51,14 +55,17 @@ export default function FilteredBookGrid({ allBooks, title }) {
     else if (sort === "ID_DESC")
       filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-    setBooks(filtered);
-    setCurrentPage(1);
+    return filtered;
   }, [filters, sort, allBooks]);
 
   const totalPages = Math.ceil(books.length / booksPerPage);
-  const paginatedBooks = books.slice(
-    (currentPage - 1) * booksPerPage,
-    currentPage * booksPerPage
+  const paginatedBooks = useMemo(
+    () =>
+      books.slice(
+        (currentPage - 1) * booksPerPage,
+        currentPage * booksPerPage
+      ),
+    [books, currentPage]
   );
 
   const handlePageChange = (page) => {
@@ -92,11 +99,17 @@ export default function FilteredBookGrid({ allBooks, title }) {
           </h1>
         </div>
         <Breadcrumbs sort={sort} filters={filters} />
-        {paginatedBooks.length > 0 ? (
+        {isLoading ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4">
+            {[...Array(12)].map((_, idx) => (
+              <SkeletonForBookCollection key={idx} />
+            ))}
+          </div>
+        ) : paginatedBooks.length > 0 ? (
           <>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4">
-              {paginatedBooks.map((book, idx) => (
-                <BookCard key={idx} book={book} />
+              {paginatedBooks.map((book) => (
+                <BookCard key={book?._id || book?.bookId} book={book} />
               ))}
             </div>
 

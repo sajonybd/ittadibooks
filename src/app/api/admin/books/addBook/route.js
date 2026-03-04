@@ -128,6 +128,7 @@ export async function POST(req) {
                 resource_type: "image",
                 type: "upload",
                 format: "jpg",
+                version: previewAsset.version,
                 page: pageNum,
                 sign_url: true,
               });

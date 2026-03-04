@@ -88,12 +88,15 @@ export default function BookDetailPage() {
       setPdfUrl(null);
       return;
     }
+    const srcParam = book?.pdf?.url
+      ? `&src=${encodeURIComponent(book.pdf.url)}`
+      : "";
     setPdfUrl(
       `${process.env.NEXT_PUBLIC_BASE_URL}/api/secure-pdf?id=${encodeURIComponent(
         book.pdf.publicId
-      )}`
+      )}${srcParam}`
     );
-  }, [book?.pdf?.publicId]);
+  }, [book?.pdf?.publicId, book?.pdf?.url]);
 
   
 
@@ -186,7 +189,7 @@ export default function BookDetailPage() {
 
 
 
-  const handleAddToCart = async () => {
+  const handleAddToCart = async (showDrawer = true) => {
     // Update cart count
     const current = parseInt(localStorage.getItem("cartCount")) || 0;
     localStorage.setItem("cartCount", current + 1);
@@ -202,7 +205,9 @@ export default function BookDetailPage() {
 
     // Trigger update & state
     window.dispatchEvent(new Event("cartUpdated"));
-    window.dispatchEvent(new Event("openCart"));
+    if (showDrawer) {
+      window.dispatchEvent(new Event("openCart"));
+    }
     setInCart(true);
 
   };
@@ -256,9 +261,9 @@ export default function BookDetailPage() {
 
   const handleBuyNow = async () => {
     if (!inCart) {
-      handleAddToCart();
+      handleAddToCart(false);
     }
-    router.push("/cart");
+    router.push(`/${locale}/checkout`);
   };
 
   const handleMouseMove = (e) => {

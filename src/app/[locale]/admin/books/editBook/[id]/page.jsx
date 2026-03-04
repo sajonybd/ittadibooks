@@ -8,8 +8,14 @@ import axios from "axios";
 import { useRouter, useParams } from "next/navigation";
 import Select from "react-select";
 import DatePicker from "react-datepicker";
+import dynamic from "next/dynamic";
 import "react-datepicker/dist/react-datepicker.css";
 import CustomDateInput from "@/app/components/CustomDateInput";
+
+const PdfViewerComponentNew = dynamic(
+  () => import("@/app/components/pdfViewer/pdfViewer"),
+  { ssr: false }
+);
 const COLLECTION_OPTIONS = [
   { value: "bookfair2025", label: "Book Fair 2025" },
   { value: "ittadiBooks", label: "Ittadi Books" },
@@ -61,8 +67,24 @@ export default function EditBookPage() {
   const [descriptionBn, setDescriptionBn] = useState("");
   const [coverImage, setCoverImage] = useState(null);
   const [bookPdf, setBookPdf] = useState(null);
+  const [bookPdfPreviewUrl, setBookPdfPreviewUrl] = useState("");
   const [existingCover, setExistingCover] = useState("");
   const [existingBookPdf, setExistingBookPdf] = useState("");
+  const [existingBookPdfPublicId, setExistingBookPdfPublicId] = useState("");
+  const [existingPagesImages, setExistingPagesImages] = useState([]);
+  const [previewOpen, setPreviewOpen] = useState(false);
+
+  useEffect(() => {
+    if (!bookPdf) {
+      setBookPdfPreviewUrl("");
+      return;
+    }
+    const objectUrl = URL.createObjectURL(bookPdf);
+    setBookPdfPreviewUrl(objectUrl);
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [bookPdf]);
   useEffect(() => {
     const fetchAuthors = async () => {
       const data = await axios.get("/api/admin/authors/getAllName");
@@ -206,6 +228,8 @@ export default function EditBookPage() {
         setDescriptionBn(book.description?.bn || "");
         setExistingCover(book.cover?.url || "");
         setExistingBookPdf(book?.pdf?.url || "");
+        setExistingBookPdfPublicId(book?.pdf?.publicId || "");
+        setExistingPagesImages(book?.pagesImages || []);
       } catch (err) {
         toast.error("Failed to load book data");
         // // console.error(err);
@@ -935,22 +959,24 @@ export default function EditBookPage() {
             <div>
               <label className="block mb-1 font-medium">Book Pdf</label>
 
-              {existingBookPdf || bookPdf ? (
+              {existingBookPdf || existingBookPdfPublicId || bookPdf ? (
                 <div className="mb-2 relative w-32 h-32 flex items-center justify-center border p-2 rounded">
-                  <a
-                    href={bookPdf ? URL.createObjectURL(bookPdf) : existingBookPdf}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    type="button"
+                    onClick={() => setPreviewOpen(true)}
                     className="text-blue-600 underline text-sm text-center"
                   >
                     View PDF
-                  </a>
+                  </button>
                   <button
                     type="button"
                     className="absolute top-0 right-0 bg-red-600 text-white px-2 rounded"
                     onClick={() => {
                       setBookPdf(null);
+                      setBookPdfPreviewUrl("");
                       setExistingBookPdf(null);
+                      setExistingBookPdfPublicId("");
+                      setExistingPagesImages([]);
                     }}
                   >
                     ✕
@@ -964,7 +990,14 @@ export default function EditBookPage() {
               <input
                 type="file"
                 accept="application/pdf"
-                onChange={(e) => setBookPdf(e.target.files[0])}
+                onChange={(e) => {
+                  const file = e.target.files?.[0] || null;
+                  setBookPdf(file);
+                  if (file) {
+                    // Local selected file has no split pages yet.
+                    setExistingPagesImages([]);
+                  }
+                }}
                 className="border p-2 rounded w-full"
               />
             </div>
@@ -979,6 +1012,17 @@ export default function EditBookPage() {
           </div>
         </div>
       </form>
+      <PdfViewerComponentNew
+        open={previewOpen}
+        setOpen={setPreviewOpen}
+        pdfUrl={
+          bookPdfPreviewUrl ||
+          (existingBookPdfPublicId
+            ? `/api/secure-pdf?id=${encodeURIComponent(existingBookPdfPublicId)}${existingBookPdf ? `&src=${encodeURIComponent(existingBookPdf)}` : ""}`
+            : existingBookPdf)
+        }
+        pageImages={existingPagesImages}
+      />
     </div>
   );
 }

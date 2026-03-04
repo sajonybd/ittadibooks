@@ -10,6 +10,7 @@ const PdfViewerComponentNew = ({ open, setOpen, pdfUrl, pageImages = [] }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [lastWheelAt, setLastWheelAt] = useState(0);
   const [touchStartY, setTouchStartY] = useState(null);
+  const [layoutByUrl, setLayoutByUrl] = useState({});
 
   const sortedPages = useMemo(() => {
     return [...(pageImages || [])].sort(
@@ -18,28 +19,74 @@ const PdfViewerComponentNew = ({ open, setOpen, pdfUrl, pageImages = [] }) => {
   }, [pageImages]);
 
   useEffect(() => {
-    if (open) setCurrentPage(1);
-  }, [open, sortedPages.length]);
+    let isCancelled = false;
+
+    const detectLayouts = async () => {
+      const entries = await Promise.all(
+        sortedPages.map(
+          (item) =>
+            new Promise((resolve) => {
+              const img = new Image();
+              img.onload = () => {
+                const isLandscape = img.naturalWidth > img.naturalHeight * 1.15;
+                resolve([
+                  item.url,
+                  {
+                    mode: isLandscape ? "split" : "single",
+                    width: img.naturalWidth,
+                    height: img.naturalHeight,
+                  },
+                ]);
+              };
+              img.onerror = () =>
+                resolve([item.url, { mode: "single", width: 0, height: 0 }]);
+              img.src = item.url;
+            })
+        )
+      );
+
+      if (!isCancelled) {
+        setLayoutByUrl(Object.fromEntries(entries));
+      }
+    };
+
+    if (sortedPages.length > 0) {
+      detectLayouts();
+    } else {
+      setLayoutByUrl({});
+    }
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [sortedPages]);
+
+  const readingPages = useMemo(() => {
+    return sortedPages.flatMap((item) => {
+      if (layoutByUrl[item.url]?.mode === "split") {
+        return [
+          { ...item, view: "left" },
+          { ...item, view: "right" },
+        ];
+      }
+      return [{ ...item, view: "single" }];
+    });
+  }, [sortedPages, layoutByUrl]);
 
   useEffect(() => {
-    if (!open) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [open]);
+    if (open) setCurrentPage(1);
+  }, [open, readingPages.length]);
 
   const goPrev = () => setCurrentPage((p) => Math.max(1, p - 1));
   const goNext = () =>
-    setCurrentPage((p) => Math.min(sortedPages.length, p + 1));
+    setCurrentPage((p) => Math.min(readingPages.length, p + 1));
   const progressTop =
-    sortedPages.length > 1
-      ? ((currentPage - 1) / (sortedPages.length - 1)) * 100
+    readingPages.length > 1
+      ? ((currentPage - 1) / (readingPages.length - 1)) * 100
       : 0;
 
   const handleWheel = (e) => {
-    if (sortedPages.length <= 1) return;
+    if (readingPages.length <= 1) return;
     e.preventDefault();
 
     const now = Date.now();
@@ -74,7 +121,11 @@ const PdfViewerComponentNew = ({ open, setOpen, pdfUrl, pageImages = [] }) => {
       `}</style>
       <Modal
         open={open}
-        onClose={() => setOpen(false)}
+        onClose={() => {
+          setTouchStartY(null);
+          setOpen(false);
+        }}
+        disableScrollLock
         closeAfterTransition
         sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}
       >
@@ -83,7 +134,7 @@ const PdfViewerComponentNew = ({ open, setOpen, pdfUrl, pageImages = [] }) => {
             style={{
               position: "relative",
               width: "95%",
-              maxWidth: "980px",
+              maxWidth: "760px",
               height: "90%",
               maxHeight: "90vh",
               background: "#fff",
@@ -131,7 +182,7 @@ const PdfViewerComponentNew = ({ open, setOpen, pdfUrl, pageImages = [] }) => {
             onWheel={handleWheel}
             onTouchStart={(e) => setTouchStartY(e.touches?.[0]?.clientY ?? null)}
             onTouchEnd={(e) => {
-              if (sortedPages.length <= 1 || touchStartY === null) return;
+              if (readingPages.length <= 1 || touchStartY === null) return;
               const endY = e.changedTouches?.[0]?.clientY ?? touchStartY;
               const diff = touchStartY - endY;
               if (Math.abs(diff) < 30) return;
@@ -141,15 +192,46 @@ const PdfViewerComponentNew = ({ open, setOpen, pdfUrl, pageImages = [] }) => {
             }}
             className="pdf-scroll-area"
           >
-            {sortedPages.length > 0 ? (
+            {readingPages.length > 0 ? (
               <div className="h-full flex flex-col relative">
-                <div className="flex-1 overflow-auto p-2 md:p-4">
-                  <img
-                    src={sortedPages[currentPage - 1]?.url}
-                    alt={`Page ${currentPage}`}
-                    className="w-full max-w-4xl mx-auto h-auto rounded"
-                    draggable={false}
-                  />
+                <div className="flex-1 flex items-center justify-center p-2 md:p-4 overflow-hidden">
+                  {readingPages[currentPage - 1]?.view === "single" ? (
+                    <img
+                      src={readingPages[currentPage - 1]?.url}
+                      alt={`Page ${currentPage}`}
+                      className="w-full max-w-[560px] h-full max-h-[80vh] object-contain rounded mx-auto"
+                      draggable={false}
+                    />
+                  ) : (
+                    <div
+                      className="w-full max-w-[560px] max-h-[80vh] rounded overflow-hidden bg-white mx-auto"
+                      style={{
+                        aspectRatio: (() => {
+                          const current = readingPages[currentPage - 1];
+                          const meta = current ? layoutByUrl[current.url] : null;
+                          if (meta?.width && meta?.height) {
+                            return `${meta.width / 2} / ${meta.height}`;
+                          }
+                          return "3 / 4";
+                        })(),
+                      }}
+                    >
+                      <div className="relative w-full h-full overflow-hidden">
+                        <img
+                          src={readingPages[currentPage - 1]?.url}
+                          alt={`Page ${currentPage}`}
+                          className="absolute inset-y-0 left-0 h-full w-[200%] max-w-none"
+                          style={{
+                            transform:
+                              readingPages[currentPage - 1]?.view === "left"
+                                ? "translateX(0%)"
+                                : "translateX(-50%)",
+                          }}
+                          draggable={false}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="pointer-events-none absolute right-2 top-3 bottom-3 w-3 flex items-center justify-center">
                   <div className="relative h-[92%] w-1 rounded bg-gray-300">
