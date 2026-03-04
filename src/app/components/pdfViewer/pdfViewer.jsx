@@ -9,6 +9,7 @@ import { Modal, Fade } from "@mui/material";
 const PdfViewerComponentNew = ({ open, setOpen, pdfUrl, pageImages = [] }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [lastWheelAt, setLastWheelAt] = useState(0);
+  const [touchStartY, setTouchStartY] = useState(null);
 
   const sortedPages = useMemo(() => {
     return [...(pageImages || [])].sort(
@@ -73,17 +74,14 @@ const PdfViewerComponentNew = ({ open, setOpen, pdfUrl, pageImages = [] }) => {
       `}</style>
       <Modal
         open={open}
-        onClose={(_, reason) => {
-          if (reason === "backdropClick") return;
-          setOpen(false);
-        }}
+        onClose={() => setOpen(false)}
         closeAfterTransition
-        hideBackdrop
         sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}
       >
         <Fade in={open}>
           <div
             style={{
+              position: "relative",
               width: "95%",
               maxWidth: "980px",
               height: "90%",
@@ -101,8 +99,8 @@ const PdfViewerComponentNew = ({ open, setOpen, pdfUrl, pageImages = [] }) => {
             onClick={() => setOpen(false)}
             style={{
               position: "absolute",
-              top: 8,
-              right: 12,
+              top: 10,
+              right: 10,
               zIndex: 10,
               border: "none",
               background: "rgba(0,0,0,0.6)",
@@ -131,6 +129,16 @@ const PdfViewerComponentNew = ({ open, setOpen, pdfUrl, pageImages = [] }) => {
             }}
             onContextMenu={(e) => e.preventDefault()}
             onWheel={handleWheel}
+            onTouchStart={(e) => setTouchStartY(e.touches?.[0]?.clientY ?? null)}
+            onTouchEnd={(e) => {
+              if (sortedPages.length <= 1 || touchStartY === null) return;
+              const endY = e.changedTouches?.[0]?.clientY ?? touchStartY;
+              const diff = touchStartY - endY;
+              if (Math.abs(diff) < 30) return;
+              if (diff > 0) goNext();
+              else goPrev();
+              setTouchStartY(null);
+            }}
             className="pdf-scroll-area"
           >
             {sortedPages.length > 0 ? (
