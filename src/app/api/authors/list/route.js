@@ -6,9 +6,13 @@ export async function GET(req) {
     const url = new URL(req.url);
     const searchQuery = (url.searchParams.get("query") || "").trim();
     const page = Math.max(Number(url.searchParams.get("page")) || 1, 1);
-    const limit = Math.min(Math.max(Number(url.searchParams.get("limit")) || 9, 1), 48);
+    const limit = Math.min(
+      Math.max(Number(url.searchParams.get("limit")) || 9, 1),
+      48
+    );
     const skip = (page - 1) * limit;
     const db = await connectDb();
+
     const filter = searchQuery
       ? {
           $or: [
@@ -50,7 +54,6 @@ export async function GET(req) {
       },
     });
   } catch (error) {
-    // // // console.error("Get users error:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }

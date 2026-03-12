@@ -17,12 +17,26 @@ export async function POST(req) {
   try {
     const db = await connectDb();
     const body = await req.json();
+    const requestId = String(body.requestId || "").trim();
+
+    if (!requestId) {
+      return NextResponse.json(
+        { error: "Missing requestId" },
+        { status: 400 }
+      );
+    }
+
+    await db.collection("orders").createIndex(
+      { requestId: 1 },
+      { unique: true, partialFilterExpression: { requestId: { $exists: true } } }
+    );
 
     const orderId = generateOrderId();
 
     // Step 1: Save order
     const order = {
       ...body,
+      requestId,
       orderId,
       paymentStatus: "pending", // COD is unpaid initially
       paymentTransactionId: null,
@@ -30,10 +44,27 @@ export async function POST(req) {
       updatedAt: new Date(),
     };
 
-    const insertedOrder = await db.collection("orders").insertOne(order);
+    try {
+      await db.collection("orders").insertOne(order);
+    } catch (error) {
+      if (error?.code === 11000) {
+        const existingOrder = await db.collection("orders").findOne({ requestId });
+
+        if (existingOrder?.orderId) {
+          const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+          const redirectUrl = `${baseUrl}/order-success/${existingOrder.orderId}`;
+          return NextResponse.redirect(new URL(redirectUrl, req.url), 303);
+        }
+      }
+
+      throw error;
+    }
 
     // Step 2: Insert payment record (optional)
-    await db.collection("payments").insertOne({
+    await db.collection("payments").updateOne(
+      { orderId },
+      {
+        $setOnInsert: {
       orderId,
       email: body.email,
       amount: body.grandTotal,
@@ -41,8 +72,11 @@ export async function POST(req) {
       paymentTransactionId: null,
       paymentDate: null,
       paymentMethod: "cod",
-      updatedAt: new Date(),
-    });
+          updatedAt: new Date(),
+        },
+      },
+      { upsert: true }
+    );
 
     // Step 3: Redirect to success page
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;

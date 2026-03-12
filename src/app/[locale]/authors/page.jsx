@@ -1,11 +1,12 @@
  
 
 "use client";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 import { useParams } from "next/navigation";
+import Pagination from "@/app/components/Pagination";
 
 export default function AuthorsPage() {
   const t = useTranslations("authorsPage");
@@ -14,36 +15,32 @@ export default function AuthorsPage() {
   const [loading, setLoading] = useState(true);
   const [authors, setAuthors] = useState([]);
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState([]);
-
-  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const authorsPerPage = 9;
-  const totalPages = Math.ceil(results.length / authorsPerPage);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: authorsPerPage,
+    total: 0,
+    totalPages: 0,
+  });
 
-  const paginatedAuthors = useMemo(() => {
-    const start = (currentPage - 1) * authorsPerPage;
-    const end = start + authorsPerPage;
-    return results.slice(start, end);
-  }, [results, currentPage]);
-
-  // Fetch authors
   useEffect(() => {
     const fetchAuthors = async () => {
       setLoading(true);
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_BASE_URL}/api/authors/getAll`
+          `${process.env.NEXT_PUBLIC_BASE_URL}/api/authors/list?page=${currentPage}&limit=${authorsPerPage}&query=${encodeURIComponent(query)}`
         );
         const data = await res.json();
-
-        // Sort by Bangla name
-        const sorted = [...data.authors].sort((a, b) =>
-          (a.nameBn || "").localeCompare(b.nameBn || "", "bn")
+        setAuthors(data?.authors || []);
+        setPagination(
+          data?.pagination || {
+            page: currentPage,
+            limit: authorsPerPage,
+            total: 0,
+            totalPages: 0,
+          }
         );
-
-        setAuthors(sorted);
-        setResults(sorted);
       } catch (err) {
         // // console.error("Error fetching authors:", err);
       } finally {
@@ -51,30 +48,10 @@ export default function AuthorsPage() {
       }
     };
     fetchAuthors();
-  }, []);
+  }, [currentPage, query]);
  
 
   const handleSearch = () => {
-    const rawQuery = query;
-    const lowerQuery = rawQuery.toLowerCase();
-
-    if (!rawQuery) {
-      setResults(authors);
-      setCurrentPage(1);
-      return;
-    }
-
-    const filtered = authors.filter((author) => {
-      const nameEn = (author.name || "").toLowerCase(); // English
-      const nameBn = author.nameBn || ""; // Bangla
-
-      return (
-        nameEn.includes(lowerQuery) || // check English
-        nameBn.includes(rawQuery) // check Bangla
-      );
-    });
-
-    setResults(filtered);
     setCurrentPage(1);
   };
 
@@ -122,7 +99,7 @@ export default function AuthorsPage() {
   };
 
   const handlePageChange = (page) => {
-    if (page >= 1 && page <= totalPages) setCurrentPage(page);
+    if (page >= 1 && page <= pagination.totalPages) setCurrentPage(page);
   };
 
   return (
@@ -148,12 +125,12 @@ export default function AuthorsPage() {
 
       {loading ? (
         <p className="text-center">Loading...</p>
-      ) : results.length === 0 ? (
+      ) : authors.length === 0 ? (
         <p className="text-center">No authors found.</p>
       ) : (
         <>
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-6">
-            {paginatedAuthors.map((author, idx) => (
+            {authors.map((author, idx) => (
               <div
                 key={idx}
                 className="bg-[#d8d7d7] shadow-md rounded-xl p-4 text-center"
@@ -201,81 +178,13 @@ export default function AuthorsPage() {
             ))}
           </div>
 
-          {/* Pagination */}
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex justify-center mt-8 space-x-2">
-              <button
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="px-3 py-1 border rounded text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-              >
-                {t("prev")}
-              </button>
-
-              {/* First page */}
-              {currentPage > 3 && (
-                <>
-                  <button
-                    onClick={() => handlePageChange(1)}
-                    className={`px-3 py-1 border rounded ${
-                      currentPage === 1
-                        ? "bg-[#67bee4] text-white"
-                        : "text-gray-700 hover:bg-gray-100"
-                    }`}
-                  >
-                    1
-                  </button>
-                  <span className="px-2">...</span>
-                </>
-              )}
-
-              {/* Pages around current */}
-              {[...Array(totalPages)]
-                .map((_, i) => i + 1)
-                .filter(
-                  (page) => page >= currentPage - 2 && page <= currentPage + 2
-                )
-                .map((page) => (
-                  <button
-                    key={page}
-                    onClick={() => handlePageChange(page)}
-                    className={`px-3 py-1 border rounded ${
-                      currentPage === page
-                        ? "bg-[#67bee4] text-white"
-                        : "text-gray-700 hover:bg-gray-100"
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
-
-              {/* Last page */}
-              {currentPage < totalPages - 2 && (
-                <>
-                  <span className="px-2">...</span>
-                  <button
-                    onClick={() => handlePageChange(totalPages)}
-                    className={`px-3 py-1 border rounded ${
-                      currentPage === totalPages
-                        ? "bg-[#67bee4] text-white"
-                        : "text-gray-700 hover:bg-gray-100"
-                    }`}
-                  >
-                    {totalPages}
-                  </button>
-                </>
-              )}
-
-              <button
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="px-3 py-1 border rounded text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-              >
-                {t("next")}
-              </button>
-            </div>
-          )}
+          <Pagination
+            currentPage={pagination.page || currentPage}
+            totalPages={pagination.totalPages || 0}
+            onPageChange={handlePageChange}
+            totalItems={pagination.total || 0}
+            pageSize={pagination.limit || authorsPerPage}
+          />
         </>
       )}
     </div>

@@ -20,6 +20,39 @@ const normalizeLabel = (value, fallback = "N/A") => {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 };
 
+const isSameLocalDay = (left, right) =>
+  left.getFullYear() === right.getFullYear() &&
+  left.getMonth() === right.getMonth() &&
+  left.getDate() === right.getDate();
+
+const formatOrderTime = (value) => {
+  if (!value) return "N/A";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "N/A";
+
+  const now = new Date();
+
+  if (isSameLocalDay(date, now)) {
+    const diffMs = now.getTime() - date.getTime();
+    const diffMinutes = Math.max(0, Math.floor(diffMs / 60000));
+
+    if (diffMinutes < 1) return "Just now";
+    if (diffMinutes < 60) return `${diffMinutes}m ago`;
+
+    const diffHours = Math.floor(diffMinutes / 60);
+    return `${diffHours}h ago`;
+  }
+
+  return date.toLocaleString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+};
+
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -104,6 +137,7 @@ export default function AdminOrdersPage() {
         customer: order?.fullName || "N/A",
         email: order?.email || "N/A",
         amount: Number(order?.grandTotal || 0),
+        createdAt: order?.createdAt,
         paymentStatus,
         paymentMethod,
         deliveryStatus,
@@ -162,6 +196,7 @@ export default function AdminOrdersPage() {
               <th className="p-4 text-left">Order ID</th>
               <th className="p-4 text-left">Customer</th>
               <th className="p-4 text-left">Email</th>
+              <th className="p-4 text-left">Order Time</th>
               <th className="p-4 text-left">Amount (৳)</th>
               <th className="p-4 text-left">Payment Status</th>
               <th className="p-4 text-left">Payment Method</th>
@@ -172,14 +207,14 @@ export default function AdminOrdersPage() {
           <tbody>
             {!loading && tableRows.length === 0 && (
               <tr>
-                <td colSpan="8" className="text-center p-4 text-gray-600">
+                <td colSpan="9" className="text-center p-4 text-gray-600">
                   No orders found.
                 </td>
               </tr>
             )}
             {loading && (
               <tr>
-                <td colSpan="8" className="text-center p-4 text-gray-600">
+                <td colSpan="9" className="text-center p-4 text-gray-600">
                   Loading orders...
                 </td>
               </tr>
@@ -190,6 +225,7 @@ export default function AdminOrdersPage() {
                   <td className="p-4">{order.id}</td>
                   <td className="p-4">{order.customer}</td>
                   <td className="p-4">{order.email}</td>
+                  <td className="p-4 whitespace-nowrap">{formatOrderTime(order.createdAt)}</td>
                   <td className="p-4 font-semibold">৳ {order.amount}</td>
                   <td className="p-4">
                     <span
@@ -262,6 +298,7 @@ export default function AdminOrdersPage() {
             <p className="mb-2"><strong>Customer:</strong> {selectedOrder?.fullName || "N/A"}</p>
             <p className="mb-2"><strong>Email:</strong> {selectedOrder?.email || "N/A"}</p>
             <p className="mb-2"><strong>Phone:</strong> {selectedOrder?.mobile || "N/A"}</p>
+            <p className="mb-2"><strong>Order Time:</strong> {formatOrderTime(selectedOrder?.createdAt)}</p>
             <p className="mb-2"><strong>Amount:</strong> ৳ {selectedOrder?.grandTotal || 0}</p>
             <p className="mb-2"><strong>Payment:</strong> {normalizeLabel(selectedOrder?.paymentMethod)}</p>
             <p className="mb-2"><strong>Address:</strong> {selectedOrder?.address?.street || "N/A"}</p>

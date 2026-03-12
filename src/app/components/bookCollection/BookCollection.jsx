@@ -1,34 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import SwiperForBooks from "../SwiperForBooks/SwiperForBooks";
-import SkeletonForBookCollection from "../SkeletonForBookCollection/SkeletonForBookCollection";
 
-export default function BookCollection({ titleText, collection, page }) {
-  const [books, setBooks] = useState([]);
-  const [loading, setLoading] = useState(true);
+export default function BookCollection({ titleText, books = [], page }) {
   const router = useRouter();
-  useEffect(() => {
-    const fetchBooks = async () => {
-      if (!collection) return; // <-- ✅ protect the fetch
-
-      try {
-        setLoading(true);
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_BASE_URL}/api/getbookbycollection/forCollection?collection=${collection}`
-        );
-        const data = await res.json();
-        setBooks(data.books);
-      } catch (error) {
-        // // // console.error("Error fetching books:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchBooks();
-  }, [collection]);
-
   const seemore = useTranslations("seemore");
   return (
     <div className="mt-4 mb-3  h-full">
@@ -64,16 +40,7 @@ export default function BookCollection({ titleText, collection, page }) {
       {/* books grid */}
 
       <div className="">
-        {loading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 md:gap-4">
-            {[...Array(5)].map((_, idx) => (
-              <SkeletonForBookCollection key={idx} />
-            ))}
-          </div>
-        ) : (
-          <SwiperForBooks books={books} />
-        )}
-        
+        <SwiperForBooks books={books} />
       </div>
     </div>
   );

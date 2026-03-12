@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 export async function POST(req) {
   try {
     const {
+      requestId,
       email,
       fullName,
       address,
@@ -16,9 +17,65 @@ export async function POST(req) {
       paymentMethod,
     } = await req.json();
 
+    const normalizedRequestId = String(requestId || "").trim();
+
+    if (!normalizedRequestId) {
+      return NextResponse.json(
+        { error: "Missing requestId" },
+        { status: 400 }
+      );
+    }
+
+    const db = await connectDb();
+    await db.collection("orders").createIndex(
+      { requestId: 1 },
+      { unique: true, partialFilterExpression: { requestId: { $exists: true } } }
+    );
+
     const tran_id = `TXN_${Date.now()}_${Math.floor(
       1000 + Math.random() * 9000
     )}`;
+
+    try {
+      await db.collection("orders").insertOne({
+        requestId: normalizedRequestId,
+        email,
+        fullName,
+        address,
+        items,
+        subtotal,
+        shippingCost,
+        giftWrapCost,
+        discount,
+        grandTotal,
+        paymentMethod,
+        paymentTransactionId: tran_id,
+        paymentStatus: "initiated",
+        gatewayPageURL: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    } catch (error) {
+      if (error?.code === 11000) {
+        const duplicateOrder = await db.collection("orders").findOne({
+          requestId: normalizedRequestId,
+        });
+
+        if (duplicateOrder?.gatewayPageURL) {
+          return NextResponse.json({
+            data: { GatewayPageURL: duplicateOrder.gatewayPageURL },
+          });
+        }
+
+        return NextResponse.json(
+          { error: "Payment is already being processed" },
+          { status: 409 }
+        );
+      }
+
+      throw error;
+    }
+
     const init_url = "https://sandbox.sslcommerz.com/gwprocess/v4/api.php";
 
     const formData = new FormData();
@@ -88,22 +145,16 @@ export async function POST(req) {
     }
 
     // Save order in DB with pending status
-    const db = await connectDb();
-    await db.collection("orders").insertOne({
-      email,
-      fullName,
-      address,
-      items,
-      subtotal,
-      shippingCost,
-      giftWrapCost,
-      discount,
-      grandTotal,
-      paymentMethod,
-      paymentTransactionId: tran_id,
-      paymentStatus: "pending",
-      createdAt: new Date(),
-    });
+    await db.collection("orders").updateOne(
+      { requestId: normalizedRequestId },
+      {
+        $set: {
+          paymentStatus: "pending",
+          gatewayPageURL: sslRes.GatewayPageURL,
+          updatedAt: new Date(),
+        },
+      }
+    );
 
     return NextResponse.json({ data: sslRes });
   } catch (e) {

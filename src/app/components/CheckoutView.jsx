@@ -1,11 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import toast from "react-hot-toast";
+
+function generateRequestId() {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+
+  return `order_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+}
 
 export default function CheckoutView({ cartItems }) {
   // const { locale } = useParams();
@@ -28,30 +36,14 @@ export default function CheckoutView({ cartItems }) {
   const [giftWrap, setGiftWrap] = useState(false);
   const [promoCode, setPromoCode] = useState("");
   const [discount, setDiscount] = useState(0);
-  const [activePromoCodes, setActivePromoCodes] = useState([]);
+  const [isApplyingPromo, setIsApplyingPromo] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const submitLockRef = useRef(false);
 
-   
-
-  useEffect(() => {
-    const fetchPromoCodes = async () => {
-      try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/promo/getAll`);
-        const data = await res.json();
-        if (data?.promoCodes) {
-          const filtered = data.promoCodes.filter((p) => p.active);
-          setActivePromoCodes(filtered);
-        }
-      } catch (err) {
-        // // console.error("Failed to fetch promo codes:", err);
-      }
-    };
-
-    fetchPromoCodes();
-    const interval = setInterval(fetchPromoCodes, 5 * 60 * 1000);  
-    return () => clearInterval(interval);
-  }, []);
-
-  const localCart = JSON.parse(localStorage.getItem("cartItems") || "[]");
+  const localCart =
+    typeof window === "undefined"
+      ? []
+      : JSON.parse(localStorage.getItem("cartItems") || "[]");
 
   const cartItemsMain = cartItems.map((item) => {
     const localItem = localCart.find(
@@ -81,28 +73,50 @@ export default function CheckoutView({ cartItems }) {
 
   
 
-  const handleApplyPromo = () => {
-    const promo = activePromoCodes.find(
-      (p) => p.code.toLowerCase() === promoCode.trim().toLowerCase()
-    );
-  
-    if (!promo) {
-      toast.error("Invalid promo code");
+  const handleApplyPromo = async () => {
+    const normalizedPromoCode = promoCode.trim();
+
+    if (!normalizedPromoCode) {
+      toast.error("Enter a promo code");
       setDiscount(0);
       return;
     }
 
-    let discountAmount = 0;
-    if (promo.discountType === "fixed") {
-      discountAmount = promo.discountValue;
-    } else if (promo.discountType === "percentage") {
-      discountAmount = (subtotal * promo.discountValue) / 100;
-    }
+    try {
+      setIsApplyingPromo(true);
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/api/promo/validate`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            code: normalizedPromoCode,
+            subtotal,
+          }),
+        }
+      );
+      const data = await res.json();
 
-    setDiscount(discountAmount);
-    toast.success(`Promo applied! Discount: ৳${discountAmount}`);
+      if (!res.ok || !data?.valid) {
+        toast.error(data?.error || "Invalid promo code");
+        setDiscount(0);
+        return;
+      }
+
+      setDiscount(data.discount || 0);
+      toast.success(`Promo applied! Discount: ৳${data.discount || 0}`);
+    } catch (error) {
+      toast.error("Failed to validate promo code");
+      setDiscount(0);
+    } finally {
+      setIsApplyingPromo(false);
+    }
   };
   const handleProceed = () => {
+    if (submitLockRef.current || isSubmitting) {
+      return;
+    }
+
     if (!String(formData.fullName || "").trim()) {
       toast.error("Full Name is required");
       return;
@@ -119,11 +133,16 @@ export default function CheckoutView({ cartItems }) {
       toast.error("Please select a payment method");
       return;
     }
+    submitLockRef.current = true;
+    setIsSubmitting(true);
+
+    const requestId = generateRequestId();
+
     if (paymentMethod === "ssl") {
-      handleSslPayment();
+      handleSslPayment(requestId);
       return;
     }
-    handleCodPayment();
+    handleCodPayment(requestId);
   };
 
   useEffect(() => {
@@ -156,10 +175,15 @@ export default function CheckoutView({ cartItems }) {
     fetchAddressFromDb();
   }, [session]);
 
-  const handleSslPayment = async () => {
-    if (!session?.data?.user?.email) return;
+  const handleSslPayment = async (requestId) => {
+    if (!session?.data?.user?.email) {
+      submitLockRef.current = false;
+      setIsSubmitting(false);
+      return;
+    }
 
     const orderData = {
+      requestId,
       fullName: formData.fullName,
       mobile: formData.mobile,
       email: formData.email || session.data.user.email,
@@ -184,8 +208,6 @@ export default function CheckoutView({ cartItems }) {
       paymentMethod: "ssl",
     };
 
-    // setPayLoading(true);
-
     toast
       .promise(
         (async () => {
@@ -200,6 +222,9 @@ export default function CheckoutView({ cartItems }) {
 
           const data = await res.json();
  
+          if (!res.ok) {
+            throw new Error(data?.error || "Failed to start payment");
+          }
 
           if (data?.data?.GatewayPageURL) {
             setTimeout(() => {
@@ -217,13 +242,19 @@ export default function CheckoutView({ cartItems }) {
         }
       )
       .finally(() => {
-        // setPayLoading(false);
+        submitLockRef.current = false;
+        setIsSubmitting(false);
       });
   };
-  const handleCodPayment = async () => {
-    if (!session?.data?.user?.email) return;
+  const handleCodPayment = async (requestId) => {
+    if (!session?.data?.user?.email) {
+      submitLockRef.current = false;
+      setIsSubmitting(false);
+      return;
+    }
 
     const orderData = {
+      requestId,
       fullName: formData.fullName,
       mobile: formData.mobile,
       email: formData.email || session.data.user.email,
@@ -266,6 +297,9 @@ export default function CheckoutView({ cartItems }) {
       }
     } catch (error) {
       // // // console.error("COD Payment Error:", error);
+    } finally {
+      submitLockRef.current = false;
+      setIsSubmitting(false);
     }
   };
 
@@ -385,13 +419,18 @@ export default function CheckoutView({ cartItems }) {
 
             <button
               onClick={handleProceed}
-              disabled={!paymentMethod}
-              className={`w-full mt-2 text-white font-semibold py-3 rounded-lg transition ${paymentMethod
-                ? "bg-[#67bee4] hover:bg-[#50addb]"
-                : "bg-gray-400 cursor-not-allowed"
-                }`}
+              disabled={!paymentMethod || isSubmitting}
+              className={`w-full mt-2 text-white font-semibold py-3 rounded-lg transition ${
+                paymentMethod && !isSubmitting
+                  ? "bg-[#67bee4] hover:bg-[#50addb]"
+                  : "bg-gray-400 cursor-not-allowed"
+              }`}
             >
-              {paymentMethod === "cod" ? "Place COD Order" : "Pay Now"}
+              {isSubmitting
+                ? "Processing..."
+                : paymentMethod === "cod"
+                  ? "Place COD Order"
+                  : "Pay Now"}
             </button>
           </div>
         </div>
@@ -445,9 +484,10 @@ export default function CheckoutView({ cartItems }) {
               />
               <button
                 onClick={handleApplyPromo}
+                disabled={isApplyingPromo}
                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold"
               >
-                {t("promoCode.apply")}
+                {isApplyingPromo ? "Checking..." : t("promoCode.apply")}
               </button>
             </div>
             {discount > 0 && (

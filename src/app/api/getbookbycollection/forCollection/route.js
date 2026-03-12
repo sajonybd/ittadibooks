@@ -18,7 +18,23 @@ export async function GET(req) {
 
     const books = await db
       .collection("books")
-      .find({ "collections.value": collectionName })
+      .find(
+        { "collections.value": collectionName },
+        {
+          projection: {
+            _id: 1,
+            bookId: 1,
+            title: 1,
+            cover: 1,
+            discountedPrice: 1,
+            price: 1,
+            authors: 1,
+            inStock: 1,
+            isEbook: 1,
+            createdAt: 1,
+          },
+        }
+      )
       .sort({ createdAt: -1 })
       .limit(12)
       .toArray();

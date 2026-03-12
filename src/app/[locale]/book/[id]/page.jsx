@@ -244,20 +244,18 @@ export default function BookDetailPage() {
   const [relatedBooks, setRelatedBooks] = useState([]);
   useEffect(() => {
     const categoryName = book?.categories?.[0]?.category;
-    if (!categoryName) return;
+    const currentBookId = book?.bookId;
+    if (!categoryName || !currentBookId) return;
     const fetchRelatedBooks = async () => {
       try {
-        const res = await axios.get(`${process.env.NEXT_PUBLIC_BASE_URL}/api/book/getAll`);
-        if (res.data?.success) {
-          const filtered = res.data.books.filter(
-            (b) => b._id !== book._id && b.categories?.[0]?.category === categoryName
-          );
-          setRelatedBooks(filtered.slice(0, 8));
-        }
+        const res = await axios.get(
+          `${process.env.NEXT_PUBLIC_BASE_URL}/api/book/getbookForFilter?categoryBn=${encodeURIComponent(categoryName)}&excludeBookId=${encodeURIComponent(currentBookId)}&limit=8`
+        );
+        setRelatedBooks(res.data?.books || []);
       } catch (error) { }
     };
     fetchRelatedBooks();
-  }, [book?._id, book?.categories?.[0]?.category]);
+  }, [book?.bookId, book?.categories?.[0]?.category]);
 
   const handleBuyNow = async () => {
     if (!inCart) {

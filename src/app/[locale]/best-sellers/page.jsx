@@ -1,6 +1,7 @@
 "use client";
 import BookCard from "@/app/components/BookCard";
 import SkeletonForBookCollection from "@/app/components/SkeletonForBookCollection/SkeletonForBookCollection";
+import Pagination from "@/app/components/Pagination";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
@@ -11,15 +12,15 @@ export default function BestSellersPage() {
   const booksPerPage = 18;
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const totalPages = Math.ceil(books.length / booksPerPage);
-  // const { locale } = useRouter();
-  const paginatedBooks = books.slice(
-    (currentPage - 1) * booksPerPage,
-    currentPage * booksPerPage
-  );
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: booksPerPage,
+    total: 0,
+    totalPages: 0,
+  });
 
   const handlePageChange = (page) => {
-    if (page >= 1 && page <= totalPages) setCurrentPage(page);
+    if (page >= 1 && page <= pagination.totalPages) setCurrentPage(page);
   };
 
   const t = useTranslations("bestSellerBooks");
@@ -29,12 +30,18 @@ export default function BestSellersPage() {
       try {
         setLoading(true);
         const res = await fetch(
-          `${
-            process.env.NEXT_PUBLIC_BASE_URL
-          }/api/getbookbycollection?collection=${"bestSellers"}`
+          `${process.env.NEXT_PUBLIC_BASE_URL}/api/book/getbookForFilter?collection=bestSellers&page=${currentPage}&limit=${booksPerPage}`
         );
         const data = await res.json();
-        setBooks(data.books);
+        setBooks(data?.books || []);
+        setPagination(
+          data?.pagination || {
+            page: currentPage,
+            limit: booksPerPage,
+            total: 0,
+            totalPages: 0,
+          }
+        );
       } catch (error) {
         // // // console.error("Error fetching books:", error);
       } finally {
@@ -43,7 +50,7 @@ export default function BestSellersPage() {
     };
 
     fetchBooks();
-  }, []);
+  }, [currentPage]);
 
   return (
     <div className="min-h-screen bg-gray-50 p-5 lg:p-6">
@@ -64,87 +71,23 @@ export default function BestSellersPage() {
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-6 gap-6">
-            {paginatedBooks.map((book) => (
+            {books.map((book) => (
               <div key={book?._id || book?.bookId} className="border-2 border-gray-300 rounded-lg">
                 <BookCard book={book} />
               </div>
             ))}
           </div>
         )}
-        {!loading && paginatedBooks.length > 0 && (
-          <div className="flex justify-center mt-8 space-x-2">
-            <button
-              onClick={() => handlePageChange(currentPage - 1)}
-              className="px-3 py-1 border rounded text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-              disabled={currentPage === 1}
-            >
-              {t("prev")}
-            </button>
-
-            {/* First page */}
-            {currentPage > 3 && (
-              <>
-                <button
-                  onClick={() => handlePageChange(1)}
-                  className={`px-3 py-1 border rounded ${
-                    currentPage === 1
-                      ? "bg-[#67bee4] text-white"
-                      : "text-gray-700 hover:bg-gray-100"
-                  }`}
-                >
-                  1
-                </button>
-                <span className="px-2">...</span>
-              </>
-            )}
-
-            {/* Pages around current */}
-            {[...Array(totalPages)]
-              .map((_, i) => i + 1)
-              .filter(
-                (page) => page >= currentPage - 2 && page <= currentPage + 2
-              )
-              .map((page) => (
-                <button
-                  key={page}
-                  onClick={() => handlePageChange(page)}
-                  className={`px-3 py-1 border rounded ${
-                    currentPage === page
-                      ? "bg-[#67bee4] text-white"
-                      : "text-gray-700 hover:bg-gray-100"
-                  }`}
-                >
-                  {page}
-                </button>
-              ))}
-
-            {/* Last page */}
-            {currentPage < totalPages - 2 && (
-              <>
-                <span className="px-2">...</span>
-                <button
-                  onClick={() => handlePageChange(totalPages)}
-                  className={`px-3 py-1 border rounded ${
-                    currentPage === totalPages
-                      ? "bg-[#67bee4] text-white"
-                      : "text-gray-700 hover:bg-gray-100"
-                  }`}
-                >
-                  {totalPages}
-                </button>
-              </>
-            )}
-
-            <button
-              onClick={() => handlePageChange(currentPage + 1)}
-              className="px-3 py-1 border rounded text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-              disabled={currentPage === totalPages}
-            >
-              {t("next")}
-            </button>
-          </div>
+        {!loading && books.length > 0 && (
+          <Pagination
+            currentPage={pagination.page || currentPage}
+            totalPages={pagination.totalPages || 0}
+            onPageChange={handlePageChange}
+            totalItems={pagination.total || 0}
+            pageSize={pagination.limit || booksPerPage}
+          />
         )}
-        {!loading && paginatedBooks.length === 0 && (
+        {!loading && books.length === 0 && (
           <p className="text-center py-10">No books found</p>
         )}
       </div>

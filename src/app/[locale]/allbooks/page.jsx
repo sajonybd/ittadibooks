@@ -1,12 +1,13 @@
- 
- 
 import AllBooksPage from "@/app/components/AllBooksPage";
-import { getAllBooks } from "@/lib/booksCache";
+import { getCategories, getNavbarAuthors } from "@/lib/siteDataCache";
 
 export const revalidate = false;
 
 export default async function Page() {
-  const books = await getAllBooks()
+  const [authors, categories] = await Promise.all([
+    getNavbarAuthors(),
+    getCategories(),
+  ]);
 
-  return <AllBooksPage books={books} />;
+  return <AllBooksPage authors={authors} categories={categories} />;
 }

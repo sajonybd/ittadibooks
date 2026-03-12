@@ -1,15 +1,18 @@
 "use client";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import Image from "next/image";
 import { useParams, usePathname, useRouter } from "next/navigation";
-import React, { use, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import LocaleSwitcher from "./LocaleSwitcher";
 import { gsap } from "@/lib/gsap";
 import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
-import axios from "axios";
 
-export default function NavBarClient({books}) {
+export default function NavBarClient({
+  books,
+  authors: initialAuthors,
+  categories: initialCategories,
+}) {
  
   const { locale } = useParams();
  
@@ -96,36 +99,9 @@ export default function NavBarClient({books}) {
   useEffect(() => {
     setLang(locale);
   }, [locale]);
-  const [authors, setAuthors] = useState([]);
-
-  useEffect(() => {
-    const getAuthors = async () => {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/authors/getAll/navbar`
-      );
-      const data = await res.json();
-      if (res.ok) {
-        setAuthors(data?.authors);
-      }
-    };
-    getAuthors();
-  }, []);
-  const [categories, setCategories] = useState([]);
+  const [authors] = useState(initialAuthors || []);
+  const [categories] = useState(initialCategories || []);
   const [cartItems, setCartItems] = useState([]);
-  useEffect(() => {
-    const getcategories = async () => {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/categories/getAll`
-      );
-      const data = await res.json();
-
-      if (res.ok) {
-        setCategories(data);
-      }
-    };
-    getcategories();
-  }, []);
-
   
   const handleLogout = async () => {
     await signOut({ callbackUrl: "/" });

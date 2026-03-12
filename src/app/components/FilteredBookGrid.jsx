@@ -1,11 +1,19 @@
 "use client";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import BrowseSidebar from "./sidebar/Sidebar";
 import Breadcrumbs from "./Breadcrumbs";
 import BookCard from "./BookCard";
 import SkeletonForBookCollection from "./SkeletonForBookCollection/SkeletonForBookCollection";
+import Pagination from "./Pagination";
+import { buildBookListQuery } from "@/lib/bookListQuery";
 
-export default function FilteredBookGrid({ allBooks, title, isLoading = false }) {
+export default function FilteredBookGrid({
+  title,
+  authors = [],
+  categories = [],
+  collection,
+  isLoading = false,
+}) {
   const [filters, setFilters] = useState({
     categories: [],
     authors: [],
@@ -16,60 +24,67 @@ export default function FilteredBookGrid({ allBooks, title, isLoading = false })
   const [sort, setSort] = useState("ALL_BOOKS");
   const [currentPage, setCurrentPage] = useState(1);
   const booksPerPage = 12;
+  const [books, setBooks] = useState([]);
+  const [loading, setLoading] = useState(isLoading);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: booksPerPage,
+    total: 0,
+    totalPages: 0,
+  });
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filters, sort, allBooks]);
+  }, [filters, sort, collection]);
 
-  const books = useMemo(() => {
-    let filtered = [...allBooks];
-    if (filters.categories?.length) {
-      filtered = filtered.filter((book) =>
-        book.categories?.some((cat) =>
-          filters.categories.includes(cat.category)
-        )
-      );
-    }
+  useEffect(() => {
+    const fetchBooks = async () => {
+      try {
+        setLoading(true);
+        const query = buildBookListQuery({
+          page: currentPage,
+          limit: booksPerPage,
+          sort,
+          collection,
+          categories: filters.categories,
+          authors: filters.authors,
+          publishers: filters.publishers,
+          ebookOnly: filters.ebookOnly,
+          inStockOnly: filters.inStockOnly,
+        });
 
-    if (filters.authors?.length) {
-      filtered = filtered.filter((b) =>
-        b.authors?.some((a) => {
-          // take only part before `/`
-          const banglaName = a.name.split("/")[0].trim();
-          return filters.authors.includes(banglaName);
-        })
-      );
-    }
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_BASE_URL}/api/book/getbookForFilter?${query}`
+        );
+        const data = await res.json();
 
-    if (filters.publishers?.length)
-      filtered = filtered.filter((b) =>
-        filters.publishers.includes(b.publisher)
-      );
-    if (filters.ebookOnly) filtered = filtered.filter((b) => b.isEbook);
-    if (filters.inStockOnly) filtered = filtered.filter((b) => b.inStock);
+        setBooks(data?.books || []);
+        setPagination(
+          data?.pagination || {
+            page: currentPage,
+            limit: booksPerPage,
+            total: 0,
+            totalPages: 0,
+          }
+        );
+      } catch (error) {
+        setBooks([]);
+        setPagination({
+          page: currentPage,
+          limit: booksPerPage,
+          total: 0,
+          totalPages: 0,
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    if (sort === "SOLD_COUNT_DESC")
-      filtered.sort((a, b) => b.soldCount - a.soldCount);
-    else if (sort === "PRICE_ASC") filtered.sort((a, b) => a.price - b.price);
-    else if (sort === "PRICE_DESC") filtered.sort((a, b) => b.price - a.price);
-    else if (sort === "ID_DESC")
-      filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-    return filtered;
-  }, [filters, sort, allBooks]);
-
-  const totalPages = Math.ceil(books.length / booksPerPage);
-  const paginatedBooks = useMemo(
-    () =>
-      books.slice(
-        (currentPage - 1) * booksPerPage,
-        currentPage * booksPerPage
-      ),
-    [books, currentPage]
-  );
+    fetchBooks();
+  }, [collection, currentPage, filters, sort]);
 
   const handlePageChange = (page) => {
-    if (page >= 1 && page <= totalPages) {
+    if (page >= 1 && page <= pagination.totalPages) {
       setCurrentPage(page);
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -87,6 +102,8 @@ export default function FilteredBookGrid({ allBooks, title, isLoading = false })
                 setSort={setSort}
                 filters={filters}
                 setFilters={setFilters}
+                authors={authors}
+                categories={categories}
               />
             </div>
           </div>
@@ -105,91 +122,21 @@ export default function FilteredBookGrid({ allBooks, title, isLoading = false })
               <SkeletonForBookCollection key={idx} />
             ))}
           </div>
-        ) : paginatedBooks.length > 0 ? (
+        ) : books.length > 0 ? (
           <>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4">
-              {paginatedBooks.map((book) => (
+              {books.map((book) => (
                 <BookCard key={book?._id || book?.bookId} book={book} />
               ))}
             </div>
 
-            {/* Pagination */}
-            {paginatedBooks.length > 0 && (
-              <div className="flex justify-center mt-8 space-x-2">
-                {/* Prev */}
-                <button
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  className="px-3 py-1 border rounded text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-                  disabled={currentPage === 1}
-                >
-                  পূর্ববর্তী
-                </button>
-
-                {/* First page + leading ellipsis */}
-                {currentPage > 3 && (
-                  <>
-                    <button
-                      onClick={() => handlePageChange(1)}
-                      className={`px-3 py-1 border rounded ${
-                        currentPage === 1
-                          ? "bg-[#67bee4] text-white"
-                          : "text-gray-700 hover:bg-gray-100"
-                      }`}
-                    >
-                      1
-                    </button>
-                    <span className="px-2">...</span>
-                  </>
-                )}
-
-                {/* Pages around current */}
-                {[...Array(totalPages)]
-                  .map((_, i) => i + 1)
-                  .filter(
-                    (page) =>
-                      page >= currentPage - 2 && page <= currentPage + 2
-                  )
-                  .map((page) => (
-                    <button
-                      key={page}
-                      onClick={() => handlePageChange(page)}
-                      className={`px-3 py-1 border rounded ${
-                        currentPage === page
-                          ? "bg-[#67bee4] text-white"
-                          : "text-gray-700 hover:bg-gray-100"
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  ))}
-
-                {/* Last page + trailing ellipsis */}
-                {currentPage < totalPages - 2 && (
-                  <>
-                    <span className="px-2">...</span>
-                    <button
-                      onClick={() => handlePageChange(totalPages)}
-                      className={`px-3 py-1 border rounded ${
-                        currentPage === totalPages
-                          ? "bg-[#67bee4] text-white"
-                          : "text-gray-700 hover:bg-gray-100"
-                      }`}
-                    >
-                      {totalPages}
-                    </button>
-                  </>
-                )}
-
-                {/* Next */}
-                <button
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  className="px-3 py-1 border rounded text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-                  disabled={currentPage === totalPages}
-                >
-                  পরবর্তী
-                </button>
-              </div>
-            )}
+            <Pagination
+              currentPage={pagination.page || currentPage}
+              totalPages={pagination.totalPages || 0}
+              onPageChange={handlePageChange}
+              totalItems={pagination.total || 0}
+              pageSize={pagination.limit || booksPerPage}
+            />
           </>
         ) : (
           <p className="text-center py-10">No books found</p>

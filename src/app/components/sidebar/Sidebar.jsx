@@ -1,6 +1,5 @@
 "use client";
-import React, { useState, useEffect, useMemo } from "react";
-import { X } from "lucide-react";
+import React, { useState, useMemo } from "react";
 import MobileSidebar from "../MobileSidebar";
 
 export default function BrowseSidebar({
@@ -8,42 +7,13 @@ export default function BrowseSidebar({
   setSort,
   filters,
   setFilters,
-  // authors = SAMPLE_AUTHORS,
+  authors = [],
+  categories = [],
   publishers = SAMPLE_PUBLISHERS,
 }) {
-  const [categories, setCategories] = useState([]);
-  const [authors, setAuthors] = useState([]);
   const [qAuthor, setQAuthor] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
   const [qCategory, setQCategory] = useState("");
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/categories/getAll`
-        );
-        const data = await res.json();
-        setCategories(data.categories || []);
-      } catch (error) {
-        // // console.error("Error fetching categories:", error);
-      }
-    };
-    fetchCategories();
-  }, []);
-  useEffect(() => {
-    const fetchAuthors = async () => {
-      try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_BASE_URL}/api/authors/getAll`
-        );
-        const data = await res.json();
-        setAuthors(data.authors || []);
-      } catch (error) {
-        // // console.error("Error fetching categories:", error);
-      }
-    };
-    fetchAuthors();
-  }, []);
 
   
   const filteredAuthors = useMemo(() => {

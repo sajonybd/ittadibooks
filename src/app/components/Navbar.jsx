@@ -1,13 +1,20 @@
 
 
 import { getAllBooks } from "@/lib/booksCache";
+import { getCategories, getNavbarAuthors } from "@/lib/siteDataCache";
 import NavBarClient from "./NavBarClient";
 
 
 export const revalidate = false;
 
 export default async function Navbar() {
-  const books = await getAllBooks()
+  const [books, authors, categories] = await Promise.all([
+    getAllBooks(),
+    getNavbarAuthors(),
+    getCategories(),
+  ]);
 
-  return <NavBarClient books={books} />;
+  return (
+    <NavBarClient books={books} authors={authors} categories={categories} />
+  );
 }
