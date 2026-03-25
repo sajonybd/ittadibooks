@@ -3,11 +3,33 @@
 
 import { NextResponse } from "next/server";
 import cloudinary from "@/lib/cloudinary";
-import { writeFile, unlink } from "fs/promises";
+import { createWriteStream } from "fs";
+import { unlink, writeFile } from "fs/promises";
 import path from "path";
 import os from "os";
 import { randomUUID } from "crypto";
 import { connectDb } from "@/lib/connectDb";
+import { pipeline } from "stream/promises";
+import { Readable } from "stream";
+
+export const runtime = "nodejs";
+export const maxDuration = 300;
+
+async function writeFormFileToTmp(file) {
+  const safeName = typeof file?.name === "string" && file.name ? file.name : "upload";
+  const tmpPath = path.join(os.tmpdir(), `${randomUUID()}-${safeName}`);
+
+  // Prefer streaming to avoid loading large uploads into memory.
+  if (file?.stream) {
+    await pipeline(Readable.fromWeb(file.stream()), createWriteStream(tmpPath));
+    return tmpPath;
+  }
+
+  // Fallback for runtimes where File.stream() isn't available.
+  const buffer = Buffer.from(await file.arrayBuffer());
+  await writeFile(tmpPath, buffer);
+  return tmpPath;
+}
 
 export async function POST(req) {
   try {
@@ -69,25 +91,23 @@ export async function POST(req) {
     }
 
     let coverUrl = "", coverPublicId = "";
+    let coverTmpPath = null;
     try {
-      const buffer = Buffer.from(await coverFile.arrayBuffer());
-      const filename = `${randomUUID()}-${coverFile.name}`;
-      const tmpPath = path.join(os.tmpdir(), filename);
-      await writeFile(tmpPath, buffer);
-
-      const result = await cloudinary.uploader.upload(tmpPath, {
+      coverTmpPath = await writeFormFileToTmp(coverFile);
+      const result = await cloudinary.uploader.upload(coverTmpPath, {
         folder: "books/cover",
       });
 
       coverUrl = result.secure_url;
       coverPublicId = result.public_id;
-      await unlink(tmpPath);
     } catch (err) {
       console.error("Cover upload failed:", err);
       return NextResponse.json(
         { error: "Failed to upload cover image" + (err.message ? ": " + err.message : "") },
         { status: 500 }
       );
+    } finally {
+      if (coverTmpPath) await unlink(coverTmpPath).catch(() => {});
     }
 
     // PDF upload (optional)
@@ -96,14 +116,12 @@ export async function POST(req) {
     let pdfSplitWarning = null;
     const pdfFile = formData.get("bookPdf");
     if (pdfFile && pdfFile.arrayBuffer && pdfFile.size > 0) {
+      let pdfTmpPath = null;
       try {
-        const buffer = Buffer.from(await pdfFile.arrayBuffer());
-        const filename = `${randomUUID()}-${pdfFile.name}`;
-        const tmpPath = path.join(os.tmpdir(), filename);
         try {
-          await writeFile(tmpPath, buffer);
+          pdfTmpPath = await writeFormFileToTmp(pdfFile);
 
-          const result = await cloudinary.uploader.upload(tmpPath, {
+          const result = await cloudinary.uploader.upload(pdfTmpPath, {
             folder: "books/pdf",
             resource_type: "raw",
             access_mode: "public",
@@ -113,7 +131,7 @@ export async function POST(req) {
           pdfPublicId = result.public_id;
 
           try {
-            const previewAsset = await cloudinary.uploader.upload(tmpPath, {
+            const previewAsset = await cloudinary.uploader.upload(pdfTmpPath, {
               folder: `books/pages/${bookId}`,
               public_id: "source-pdf",
               overwrite: true,
@@ -146,7 +164,7 @@ export async function POST(req) {
             console.error("PDF split failed:", splitError);
           }
         } finally {
-          await unlink(tmpPath).catch(() => {});
+          if (pdfTmpPath) await unlink(pdfTmpPath).catch(() => {});
         }
       } catch (err) {
         console.error("PDF upload failed:", err);

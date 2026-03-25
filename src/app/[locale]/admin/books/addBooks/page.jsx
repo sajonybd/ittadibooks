@@ -13,8 +13,10 @@ import toast from "react-hot-toast";
 export default function AddBookPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(null);
   
   const fileInputRef = useRef(null);
+  const pdfInputRef = useRef(null);
   const [titleEn, setTitleEn] = useState("");
   const [titleBn, setTitleBn] = useState("");
   const [subtitleEn, setSubtitleEn] = useState("");
@@ -65,6 +67,39 @@ export default function AddBookPage() {
   const [bookPdf, setBookPdf] = useState(null);
   const [availability, setAvailability] = useState("");
 
+  const resetForm = () => {
+    setTitleEn("");
+    setTitleBn("");
+    setSubtitleEn("");
+    setSubtitleBn("");
+    setAuthorList([{ name: "", uid: "" }]);
+    setTranslatorList([{ name: "", uid: "" }]);
+    setEditorList([{ name: "", uid: "" }]);
+    setCategoriesSelected([{ category: null, subCategory: [] }]);
+    setPublisher(null);
+    setCustomPublisher("");
+    setPublishedDate("");
+    setIsbn("");
+    setLanguage(null);
+    setFormat("");
+    setEdition("");
+    setPages("");
+    setPrice("");
+    setDiscount("");
+    setDiscountedPrice("");
+    setOrderType("");
+    setCollections([]);
+    setDescription("");
+    setDescriptionBn("");
+    setCoverImage(null);
+    setBookPdf(null);
+    setAvailability("");
+    setUploadProgress(null);
+
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (pdfInputRef.current) pdfInputRef.current.value = "";
+  };
+
   useEffect(() => {
     const fetchAuthors = async () => {
       const data = await axios.get(
@@ -107,7 +142,14 @@ export default function AddBookPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isSubmitting) return;
+
+    if (!coverImage) {
+      toast.error("Cover image is required");
+      return;
+    }
+
     setIsSubmitting(true);
+    setUploadProgress(0);
 
     try {
       const formData = new FormData();
@@ -163,7 +205,7 @@ export default function AddBookPage() {
 
       formData.append("description", description);
       formData.append("descriptionBn", descriptionBn);
-      formData.append("coverImage", coverImage);
+      if (coverImage) formData.append("coverImage", coverImage);
       if (bookPdf) formData.append("bookPdf", bookPdf);
       
       collections.forEach((c) =>
@@ -172,21 +214,36 @@ export default function AddBookPage() {
 
       const res = await axios.post(
         `${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/books/addBook`,
-        formData
+        formData,
+        {
+          onUploadProgress: (evt) => {
+            const total = evt.total || 0;
+            if (!total) return;
+            setUploadProgress(Math.min(100, Math.round((evt.loaded * 100) / total)));
+          },
+        }
       );
 
       if (res.data.success) {
         toast.success("Book added successfully");
-        window.location.reload();
+        if (res.data.warning) toast(res.data.warning);
+        resetForm();
+        router.refresh();
       } else {
-        toast.error("Failed to add book");
+        toast.error(res?.data?.error || "Failed to add book");
       }
     } catch (error) {
-      if (error.status === 400) {
-        toast.error("Cover image is required");
-      }
+      const status = error?.response?.status;
+      const message =
+        error?.response?.data?.error ||
+        error?.message ||
+        "Failed to add book";
+
+      if (status === 400) toast.error(message);
+      else toast.error(message);
     } finally {
       setIsSubmitting(false);
+      setUploadProgress(null);
     }
   };
 
@@ -799,7 +856,9 @@ export default function AddBookPage() {
                     className="absolute top-0 right-0 bg-red-600 text-white px-2 rounded"
                     onClick={() => {
                       setBookPdf(null);
-                      // You might want a separate ref for the PDF input if you need to clear it specifically
+                      if (pdfInputRef.current) {
+                        pdfInputRef.current.value = "";
+                      }
                     }}
                   >
                     ✕
@@ -812,6 +871,7 @@ export default function AddBookPage() {
               <input
                 type="file"
                 accept="application/pdf"
+                ref={pdfInputRef}
                 onChange={(e) => setBookPdf(e.target.files[0])}
                 className="border p-2 rounded w-full"
               />
@@ -825,6 +885,20 @@ export default function AddBookPage() {
             >
               {isSubmitting ? "Submitting..." : "Add Book"}
             </button>
+
+            {isSubmitting && uploadProgress !== null && (
+              <div className="mt-2">
+                <div className="w-full h-2 bg-gray-200 rounded">
+                  <div
+                    className="h-2 bg-blue-600 rounded"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+                <p className="text-xs text-gray-600 mt-1">
+                  Uploading: {uploadProgress}%
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </form>
