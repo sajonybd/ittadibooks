@@ -1,6 +1,4 @@
-
-import HomeBooks from "../components/HomeBooks"; // Client component
-
+import HomeBooks from "@/app/components/HomeBooks"; // Client component
 import { getAllBooks } from "@/lib/getAllBooks";
 import { getCategories, getNavbarAuthors } from "@/lib/siteDataCache";
 

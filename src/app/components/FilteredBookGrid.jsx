@@ -12,7 +12,7 @@ export default function FilteredBookGrid({
   authors = [],
   categories = [],
   collection,
-  isLoading = false,
+  isLoading: isLoadingProp,
 }) {
   const [filters, setFilters] = useState({
     categories: [],
@@ -25,7 +25,7 @@ export default function FilteredBookGrid({
   const [currentPage, setCurrentPage] = useState(1);
   const booksPerPage = 12;
   const [books, setBooks] = useState([]);
-  const [loading, setLoading] = useState(isLoading);
+  const [loading, setLoading] = useState(isLoadingProp ?? true);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: booksPerPage,
@@ -34,10 +34,16 @@ export default function FilteredBookGrid({
   });
 
   useEffect(() => {
+    if (typeof isLoadingProp === "boolean") setLoading(isLoadingProp);
+  }, [isLoadingProp]);
+
+  useEffect(() => {
     setCurrentPage(1);
   }, [filters, sort, collection]);
 
   useEffect(() => {
+    const controller = new AbortController();
+    let cancelled = false;
     const fetchBooks = async () => {
       try {
         setLoading(true);
@@ -54,10 +60,12 @@ export default function FilteredBookGrid({
         });
 
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_BASE_URL}/api/book/getbookForFilter?${query}`
+          `${process.env.NEXT_PUBLIC_BASE_URL}/api/book/getbookForFilter?${query}`,
+          { signal: controller.signal }
         );
         const data = await res.json();
 
+        if (cancelled) return;
         setBooks(data?.books || []);
         setPagination(
           data?.pagination || {
@@ -68,6 +76,7 @@ export default function FilteredBookGrid({
           }
         );
       } catch (error) {
+        if (cancelled || error?.name === "AbortError") return;
         setBooks([]);
         setPagination({
           page: currentPage,
@@ -76,11 +85,15 @@ export default function FilteredBookGrid({
           totalPages: 0,
         });
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     fetchBooks();
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
   }, [collection, currentPage, filters, sort]);
 
   const handlePageChange = (page) => {
@@ -116,7 +129,7 @@ export default function FilteredBookGrid({
           </h1>
         </div>
         <Breadcrumbs sort={sort} filters={filters} />
-        {isLoading ? (
+        {loading ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4">
             {[...Array(12)].map((_, idx) => (
               <SkeletonForBookCollection key={idx} />
