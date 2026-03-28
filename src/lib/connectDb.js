@@ -3,7 +3,15 @@
 
 import { MongoClient, ServerApiVersion } from "mongodb";
 
-const uri = process.env.NEXT_PUBLIC_MONGODB_URI;
+const uri = process.env.MONGODB_URI || process.env.NEXT_PUBLIC_MONGODB_URI;
+
+if (!uri) {
+  // Fail fast with a clear server log instead of returning confusing 500s.
+  throw new Error(
+    "Missing MongoDB connection string. Set MONGODB_URI (recommended) or NEXT_PUBLIC_MONGODB_URI."
+  );
+}
+
 const dbNameFromUri = (() => {
   try {
     const pathname = new URL(uri).pathname || "";

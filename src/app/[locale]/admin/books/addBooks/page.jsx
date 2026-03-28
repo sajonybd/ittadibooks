@@ -225,8 +225,8 @@ export default function AddBookPage() {
         const pdfUpload = await uploadToCloudinary({
           file: bookPdf,
           folder: "books/pdf",
-          resourceType: "raw",
-          accessMode: "public",
+          // Upload PDF as an "image" resource so Cloudinary can generate page transforms (page=1..N).
+          resourceType: "image",
           onProgress: (loaded, total) => {
             setUploadProgress(40 + Math.min(50, Math.round((loaded * 50) / total)));
           },

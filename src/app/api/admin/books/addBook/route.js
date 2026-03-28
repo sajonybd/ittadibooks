@@ -190,8 +190,8 @@ export async function POST(req) {
 
           const result = await cloudinary.uploader.upload(pdfTmpPath, {
             folder: "books/pdf",
-            resource_type: "raw",
-            access_mode: "public",
+            // Upload as "image" so Cloudinary can later generate page thumbnails via `page` transforms.
+            resource_type: "image",
           });
 
           pdfUrl = result.secure_url;
@@ -211,25 +211,24 @@ export async function POST(req) {
       }
     }
 
-    // Generate page JPGs (optional) if we have a PDF URL now.
-    if (pdfUrl) {
+    // Generate page JPGs (optional) if we have a PDF now.
+    // IMPORTANT: This expects the PDF to be stored as a Cloudinary "image" resource.
+    if (pdfPublicId) {
       try {
-        const previewAsset = await cloudinary.uploader.upload(pdfUrl, {
-          folder: `books/pages/${bookId}`,
-          public_id: "source-pdf",
-          overwrite: true,
+        const pdfAsset = await cloudinary.api.resource(pdfPublicId, {
           resource_type: "image",
-          format: "pdf",
         });
 
-        const totalPagesFromPdf = Number(previewAsset?.pages || 0);
+        const totalPagesFromPdf = Number(pdfAsset?.pages || 0);
+        const assetVersion = pdfAsset?.version;
+
         for (let pageNum = 1; pageNum <= totalPagesFromPdf; pageNum += 1) {
-          const pageUrl = cloudinary.url(previewAsset.public_id, {
+          const pageUrl = cloudinary.url(pdfPublicId, {
             secure: true,
             resource_type: "image",
             type: "upload",
             format: "jpg",
-            version: previewAsset.version,
+            ...(assetVersion ? { version: assetVersion } : {}),
             page: pageNum,
             sign_url: true,
           });
@@ -237,7 +236,7 @@ export async function POST(req) {
           pagesImages.push({
             page: pageNum,
             url: pageUrl,
-            publicId: `${previewAsset.public_id}:page-${pageNum}`,
+            publicId: `${pdfPublicId}:page-${pageNum}`,
           });
         }
       } catch (splitError) {

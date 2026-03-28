@@ -65,6 +65,7 @@ export async function GET() {
       collections: collectionsRaw,
     });
   } catch (error) {
+    console.error("GET /api/admin/books/filters failed:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }
