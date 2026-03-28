@@ -15,6 +15,9 @@ import { Readable } from "stream";
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
+const MAX_COVER_BYTES = 15 * 1024 * 1024; // 15MB
+const MAX_PDF_BYTES = 200 * 1024 * 1024; // 200MB
+
 async function writeFormFileToTmp(file) {
   const safeName = typeof file?.name === "string" && file.name ? file.name : "upload";
   const tmpPath = path.join(os.tmpdir(), `${randomUUID()}-${safeName}`);
@@ -33,7 +36,32 @@ async function writeFormFileToTmp(file) {
 
 export async function POST(req) {
   try {
-    const formData = await req.formData();
+    let formData;
+    try {
+      formData = await req.formData();
+    } catch (err) {
+      const msg = err?.message || "";
+      // When Next/platform rejects large multipart bodies, surface a helpful 413 instead of crashing the UI.
+      if (
+        msg.includes("Body exceeded") ||
+        msg.toLowerCase().includes("entity.too.large") ||
+        msg.toLowerCase().includes("payload too large")
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              "Upload is too large for the server. Please upload a smaller file or increase the server/proxy body size limit.",
+          },
+          { status: 413 }
+        );
+      }
+
+      console.error("Invalid multipart/form-data:", err);
+      return NextResponse.json(
+        { error: "Invalid upload form data" },
+        { status: 400 }
+      );
+    }
     const bookId = `book${randomUUID()}`;
 
     // Titles
@@ -89,6 +117,12 @@ export async function POST(req) {
         { status: 400 }
       );
     }
+    if (typeof coverFile.size === "number" && coverFile.size > MAX_COVER_BYTES) {
+      return NextResponse.json(
+        { error: "Cover image is too large (max 15MB)." },
+        { status: 413 }
+      );
+    }
 
     let coverUrl = "", coverPublicId = "";
     let coverTmpPath = null;
@@ -116,6 +150,12 @@ export async function POST(req) {
     let pdfSplitWarning = null;
     const pdfFile = formData.get("bookPdf");
     if (pdfFile && pdfFile.arrayBuffer && pdfFile.size > 0) {
+      if (typeof pdfFile.size === "number" && pdfFile.size > MAX_PDF_BYTES) {
+        return NextResponse.json(
+          { error: "PDF is too large (max 200MB)." },
+          { status: 413 }
+        );
+      }
       let pdfTmpPath = null;
       try {
         try {
@@ -219,7 +259,10 @@ export async function POST(req) {
       { status: 201 }
     );
   } catch (error) {
-    // // console.error("Add Book Error:", error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    console.error("Add Book Error:", error);
+    return NextResponse.json(
+      { error: "Server error" + (error?.message ? ": " + error.message : "") },
+      { status: 500 }
+    );
   }
 }

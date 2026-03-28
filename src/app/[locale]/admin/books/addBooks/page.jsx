@@ -17,6 +17,10 @@ export default function AddBookPage() {
   
   const fileInputRef = useRef(null);
   const pdfInputRef = useRef(null);
+
+  const MAX_COVER_BYTES = 15 * 1024 * 1024; // 15MB
+  const MAX_PDF_BYTES = 200 * 1024 * 1024; // 200MB
+  const bytesToMb = (bytes) => Math.round((bytes / (1024 * 1024)) * 10) / 10;
   const [titleEn, setTitleEn] = useState("");
   const [titleBn, setTitleBn] = useState("");
   const [subtitleEn, setSubtitleEn] = useState("");
@@ -147,6 +151,14 @@ export default function AddBookPage() {
       toast.error("Cover image is required");
       return;
     }
+    if (coverImage?.size > MAX_COVER_BYTES) {
+      toast.error(`Cover image is too large (max 15MB).`);
+      return;
+    }
+    if (bookPdf?.size > MAX_PDF_BYTES) {
+      toast.error(`PDF is too large (max 200MB).`);
+      return;
+    }
 
     setIsSubmitting(true);
     setUploadProgress(0);
@@ -239,8 +251,14 @@ export default function AddBookPage() {
         error?.message ||
         "Failed to add book";
 
-      if (status === 400) toast.error(message);
-      else toast.error(message);
+      if (status === 413) {
+        toast.error(
+          message ||
+            "Upload is too large for the server. Try a smaller file or increase the server/proxy body size limit."
+        );
+      } else {
+        toast.error(message);
+      }
     } finally {
       setIsSubmitting(false);
       setUploadProgress(null);
@@ -839,7 +857,19 @@ export default function AddBookPage() {
                 type="file"
                 ref={fileInputRef}
                 accept="image/*"
-                onChange={(e) => setCoverImage(e.target.files[0])}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  if (file.size > MAX_COVER_BYTES) {
+                    toast.error(
+                      `Cover image is too large (${bytesToMb(file.size)}MB). Max 15MB.`
+                    );
+                    setCoverImage(null);
+                    e.target.value = "";
+                    return;
+                  }
+                  setCoverImage(file);
+                }}
                 className="border p-2 rounded w-full"
               />
             </div>
@@ -872,7 +902,19 @@ export default function AddBookPage() {
                 type="file"
                 accept="application/pdf"
                 ref={pdfInputRef}
-                onChange={(e) => setBookPdf(e.target.files[0])}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  if (file.size > MAX_PDF_BYTES) {
+                    toast.error(
+                      `PDF is too large (${bytesToMb(file.size)}MB). Max 200MB.`
+                    );
+                    setBookPdf(null);
+                    e.target.value = "";
+                    return;
+                  }
+                  setBookPdf(file);
+                }}
                 className="border p-2 rounded w-full"
               />
             </div>
