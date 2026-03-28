@@ -7,6 +7,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Modal, Fade } from "@mui/material";
 
 const PdfViewerComponentNew = ({ open, setOpen, pdfUrl, pageImages = [] }) => {
+  const DEFAULT_IMAGE_ZOOM = 1.25;
   const [currentPage, setCurrentPage] = useState(1);
   const [lastWheelAt, setLastWheelAt] = useState(0);
   const [touchStartY, setTouchStartY] = useState(null);
@@ -133,8 +134,8 @@ const PdfViewerComponentNew = ({ open, setOpen, pdfUrl, pageImages = [] }) => {
           <div
             style={{
               position: "relative",
-              width: "95%",
-              maxWidth: "760px",
+              width: "98%",
+              maxWidth: "720px",
               height: "90%",
               maxHeight: "90vh",
               background: "#fff",
@@ -194,17 +195,21 @@ const PdfViewerComponentNew = ({ open, setOpen, pdfUrl, pageImages = [] }) => {
           >
             {readingPages.length > 0 ? (
               <div className="h-full flex flex-col relative">
-                <div className="flex-1 flex items-center justify-center p-2 md:p-4 overflow-hidden">
+                <div className="flex-1 flex items-center justify-center p-1 md:p-2 overflow-hidden">
                   {readingPages[currentPage - 1]?.view === "single" ? (
                     <img
                       src={readingPages[currentPage - 1]?.url}
                       alt={`Page ${currentPage}`}
-                      className="w-full max-w-[560px] h-full max-h-[80vh] object-contain rounded mx-auto"
+                      className="w-full h-full max-h-[86vh] object-contain rounded mx-auto"
+                      style={{
+                        transform: `scale(${DEFAULT_IMAGE_ZOOM})`,
+                        transformOrigin: "center center",
+                      }}
                       draggable={false}
                     />
                   ) : (
                     <div
-                      className="w-full max-w-[560px] max-h-[80vh] rounded overflow-hidden bg-white mx-auto"
+                      className="w-full max-h-[86vh] rounded overflow-hidden bg-white mx-auto"
                       style={{
                         aspectRatio: (() => {
                           const current = readingPages[currentPage - 1];
@@ -224,8 +229,12 @@ const PdfViewerComponentNew = ({ open, setOpen, pdfUrl, pageImages = [] }) => {
                           style={{
                             transform:
                               readingPages[currentPage - 1]?.view === "left"
-                                ? "translateX(0%)"
-                                : "translateX(-50%)",
+                                ? `translateX(0%) scale(${DEFAULT_IMAGE_ZOOM})`
+                                : `translateX(-50%) scale(${DEFAULT_IMAGE_ZOOM})`,
+                            transformOrigin:
+                              readingPages[currentPage - 1]?.view === "left"
+                                ? "left center"
+                                : "right center",
                           }}
                           draggable={false}
                         />
@@ -249,9 +258,9 @@ const PdfViewerComponentNew = ({ open, setOpen, pdfUrl, pageImages = [] }) => {
                 </div>
               </div>
             ) : pdfUrl ? (
-              <div className="h-full p-4">
+              <div className="h-full p-2">
                 <iframe
-                  src={pdfUrl}
+                  src={pdfUrl.includes("#") ? pdfUrl : `${pdfUrl}#zoom=150`}
                   title="PDF Preview"
                   className="w-full h-full border rounded bg-white"
                 />
