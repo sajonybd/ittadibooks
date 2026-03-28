@@ -109,53 +109,80 @@ export async function POST(req) {
     const orderType = formData.get("orderType") || "";
     const availability = formData.get("availability") || "";
 
-    // Cover upload (required)
-    const coverFile = formData.get("coverImage");
-    if (!coverFile || !coverFile.arrayBuffer) {
-      return NextResponse.json(
-        { error: "Cover image is required" },
-        { status: 400 }
-      );
-    }
-    if (typeof coverFile.size === "number" && coverFile.size > MAX_COVER_BYTES) {
-      return NextResponse.json(
-        { error: "Cover image is too large (max 15MB)." },
-        { status: 413 }
-      );
-    }
-
+    // Cover (required) - either direct URL+publicId, or an uploaded file
     let coverUrl = "", coverPublicId = "";
-    let coverTmpPath = null;
-    try {
-      coverTmpPath = await writeFormFileToTmp(coverFile);
-      const result = await cloudinary.uploader.upload(coverTmpPath, {
-        folder: "books/cover",
-      });
+    const coverUrlFromForm = formData.get("coverUrl");
+    const coverPublicIdFromForm = formData.get("coverPublicId");
+    if (typeof coverUrlFromForm === "string" && typeof coverPublicIdFromForm === "string" && coverUrlFromForm && coverPublicIdFromForm) {
+      coverUrl = coverUrlFromForm;
+      coverPublicId = coverPublicIdFromForm;
+    } else {
+      const coverFile = formData.get("coverImage");
+      if (!coverFile || !coverFile.arrayBuffer) {
+        return NextResponse.json(
+          { error: "Cover image is required" },
+          { status: 400 }
+        );
+      }
+      if (
+        typeof coverFile.size === "number" &&
+        coverFile.size > MAX_COVER_BYTES
+      ) {
+        return NextResponse.json(
+          { error: "Cover image is too large (max 15MB)." },
+          { status: 413 }
+        );
+      }
 
-      coverUrl = result.secure_url;
-      coverPublicId = result.public_id;
-    } catch (err) {
-      console.error("Cover upload failed:", err);
-      return NextResponse.json(
-        { error: "Failed to upload cover image" + (err.message ? ": " + err.message : "") },
-        { status: 500 }
-      );
-    } finally {
-      if (coverTmpPath) await unlink(coverTmpPath).catch(() => {});
+      let coverTmpPath = null;
+      try {
+        coverTmpPath = await writeFormFileToTmp(coverFile);
+        const result = await cloudinary.uploader.upload(coverTmpPath, {
+          folder: "books/cover",
+        });
+
+        coverUrl = result.secure_url;
+        coverPublicId = result.public_id;
+      } catch (err) {
+        console.error("Cover upload failed:", err);
+        return NextResponse.json(
+          {
+            error:
+              "Failed to upload cover image" +
+              (err.message ? ": " + err.message : ""),
+          },
+          { status: 500 }
+        );
+      } finally {
+        if (coverTmpPath) await unlink(coverTmpPath).catch(() => {});
+      }
     }
 
     // PDF upload (optional)
     let pdfUrl = "", pdfPublicId = "";
     let pagesImages = [];
     let pdfSplitWarning = null;
+    const pdfUrlFromForm = formData.get("pdfUrl");
+    const pdfPublicIdFromForm = formData.get("pdfPublicId");
     const pdfFile = formData.get("bookPdf");
-    if (pdfFile && pdfFile.arrayBuffer && pdfFile.size > 0) {
+
+    const shouldUseUploadedPdfUrl =
+      typeof pdfUrlFromForm === "string" &&
+      typeof pdfPublicIdFromForm === "string" &&
+      pdfUrlFromForm &&
+      pdfPublicIdFromForm;
+
+    if (shouldUseUploadedPdfUrl) {
+      pdfUrl = pdfUrlFromForm;
+      pdfPublicId = pdfPublicIdFromForm;
+    } else if (pdfFile && pdfFile.arrayBuffer && pdfFile.size > 0) {
       if (typeof pdfFile.size === "number" && pdfFile.size > MAX_PDF_BYTES) {
         return NextResponse.json(
           { error: "PDF is too large (max 200MB)." },
           { status: 413 }
         );
       }
+
       let pdfTmpPath = null;
       try {
         try {
@@ -169,49 +196,55 @@ export async function POST(req) {
 
           pdfUrl = result.secure_url;
           pdfPublicId = result.public_id;
-
-          try {
-            const previewAsset = await cloudinary.uploader.upload(pdfTmpPath, {
-              folder: `books/pages/${bookId}`,
-              public_id: "source-pdf",
-              overwrite: true,
-              resource_type: "image",
-              format: "pdf",
-            });
-
-            const totalPages = Number(previewAsset?.pages || 0);
-            for (let pageNum = 1; pageNum <= totalPages; pageNum += 1) {
-              const pageUrl = cloudinary.url(previewAsset.public_id, {
-                secure: true,
-                resource_type: "image",
-                type: "upload",
-                format: "jpg",
-                version: previewAsset.version,
-                page: pageNum,
-                sign_url: true,
-              });
-
-              pagesImages.push({
-                page: pageNum,
-                url: pageUrl,
-                publicId: `${previewAsset.public_id}:page-${pageNum}`,
-              });
-            }
-          } catch (splitError) {
-            pagesImages = [];
-            pdfSplitWarning =
-              "PDF uploaded, but page JPG generation failed from Cloudinary.";
-            console.error("PDF split failed:", splitError);
-          }
         } finally {
           if (pdfTmpPath) await unlink(pdfTmpPath).catch(() => {});
         }
       } catch (err) {
         console.error("PDF upload failed:", err);
         return NextResponse.json(
-          { error: "Failed to upload PDF file" + (err.message ? ": " + err.message : "") },
+          {
+            error:
+              "Failed to upload PDF file" + (err.message ? ": " + err.message : ""),
+          },
           { status: 500 }
         );
+      }
+    }
+
+    // Generate page JPGs (optional) if we have a PDF URL now.
+    if (pdfUrl) {
+      try {
+        const previewAsset = await cloudinary.uploader.upload(pdfUrl, {
+          folder: `books/pages/${bookId}`,
+          public_id: "source-pdf",
+          overwrite: true,
+          resource_type: "image",
+          format: "pdf",
+        });
+
+        const totalPagesFromPdf = Number(previewAsset?.pages || 0);
+        for (let pageNum = 1; pageNum <= totalPagesFromPdf; pageNum += 1) {
+          const pageUrl = cloudinary.url(previewAsset.public_id, {
+            secure: true,
+            resource_type: "image",
+            type: "upload",
+            format: "jpg",
+            version: previewAsset.version,
+            page: pageNum,
+            sign_url: true,
+          });
+
+          pagesImages.push({
+            page: pageNum,
+            url: pageUrl,
+            publicId: `${previewAsset.public_id}:page-${pageNum}`,
+          });
+        }
+      } catch (splitError) {
+        pagesImages = [];
+        pdfSplitWarning =
+          "PDF uploaded, but page JPG generation failed from Cloudinary.";
+        console.error("PDF split failed:", splitError);
       }
     }
 

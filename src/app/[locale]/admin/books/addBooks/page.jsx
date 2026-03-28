@@ -21,6 +21,44 @@ export default function AddBookPage() {
   const MAX_COVER_BYTES = 15 * 1024 * 1024; // 15MB
   const MAX_PDF_BYTES = 200 * 1024 * 1024; // 200MB
   const bytesToMb = (bytes) => Math.round((bytes / (1024 * 1024)) * 10) / 10;
+
+  const uploadToCloudinary = async ({
+    file,
+    folder,
+    resourceType, // "image" | "raw"
+    accessMode, // e.g. "public"
+    onProgress,
+  }) => {
+    const signRes = await axios.post(
+      `${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/cloudinary/sign`,
+      { folder, accessMode }
+    );
+
+    const { cloudName, apiKey, timestamp, signature } = signRes.data || {};
+    if (!cloudName || !apiKey || !timestamp || !signature) {
+      throw new Error("Failed to get Cloudinary signature");
+    }
+
+    const endpoint = `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`;
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("api_key", apiKey);
+    fd.append("timestamp", String(timestamp));
+    fd.append("signature", signature);
+    fd.append("folder", folder);
+    if (accessMode) fd.append("access_mode", accessMode);
+
+    const uploadRes = await axios.post(endpoint, fd, {
+      onUploadProgress: (evt) => {
+        if (typeof onProgress !== "function") return;
+        const total = evt.total || 0;
+        if (!total) return;
+        onProgress(evt.loaded, total);
+      },
+    });
+
+    return uploadRes.data;
+  };
   const [titleEn, setTitleEn] = useState("");
   const [titleBn, setTitleBn] = useState("");
   const [subtitleEn, setSubtitleEn] = useState("");
@@ -164,6 +202,43 @@ export default function AddBookPage() {
     setUploadProgress(0);
 
     try {
+      // Upload large assets directly to Cloudinary to avoid 413 proxy/body limits on the app server.
+      setUploadProgress(1);
+      const coverUpload = await uploadToCloudinary({
+        file: coverImage,
+        folder: "books/cover",
+        resourceType: "image",
+        onProgress: (loaded, total) => {
+          setUploadProgress(Math.min(40, Math.round((loaded * 40) / total)));
+        },
+      });
+
+      const coverUrl = coverUpload?.secure_url;
+      const coverPublicId = coverUpload?.public_id;
+      if (!coverUrl || !coverPublicId) {
+        throw new Error("Cover upload failed");
+      }
+
+      let pdfUrl = "";
+      let pdfPublicId = "";
+      if (bookPdf) {
+        const pdfUpload = await uploadToCloudinary({
+          file: bookPdf,
+          folder: "books/pdf",
+          resourceType: "raw",
+          accessMode: "public",
+          onProgress: (loaded, total) => {
+            setUploadProgress(40 + Math.min(50, Math.round((loaded * 50) / total)));
+          },
+        });
+
+        pdfUrl = pdfUpload?.secure_url || "";
+        pdfPublicId = pdfUpload?.public_id || "";
+        if (!pdfUrl || !pdfPublicId) {
+          throw new Error("PDF upload failed");
+        }
+      }
+
       const formData = new FormData();
       formData.append("titleEn", titleEn);
       formData.append("titleBn", titleBn);
@@ -217,13 +292,16 @@ export default function AddBookPage() {
 
       formData.append("description", description);
       formData.append("descriptionBn", descriptionBn);
-      if (coverImage) formData.append("coverImage", coverImage);
-      if (bookPdf) formData.append("bookPdf", bookPdf);
+      formData.append("coverUrl", coverUrl);
+      formData.append("coverPublicId", coverPublicId);
+      if (pdfUrl) formData.append("pdfUrl", pdfUrl);
+      if (pdfPublicId) formData.append("pdfPublicId", pdfPublicId);
       
       collections.forEach((c) =>
         formData.append("collections[]", JSON.stringify(c))
       );
 
+      setUploadProgress(95);
       const res = await axios.post(
         `${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/books/addBook`,
         formData,
@@ -231,7 +309,9 @@ export default function AddBookPage() {
           onUploadProgress: (evt) => {
             const total = evt.total || 0;
             if (!total) return;
-            setUploadProgress(Math.min(100, Math.round((evt.loaded * 100) / total)));
+            // Keep final step from jumping backwards (Cloudinary uploads already consumed most of the bar).
+            const pct = 95 + Math.round((evt.loaded * 5) / total);
+            setUploadProgress(Math.min(100, pct));
           },
         }
       );
